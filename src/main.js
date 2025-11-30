@@ -276,7 +276,7 @@ function renderPosts() {
                    loading="lazy">
             </div>
           </div>
-        ` : `<img src="${p.image}" class="manuscript-image" style="object-fit: ${p.image_fit || 'contain'};" alt="${p.title}" loading="lazy">`) : ''}
+        ` : : `<img src="${p.image}" class="manuscript-image" style="width: 100px; height: auto; object-fit: ${p.image_fit || 'contain'};" alt="${p.title}" loading="lazy">`) : ''}
         <p class="manuscript-excerpt">${excerpt}</p>
         <div class="manuscript-footer">
           <div class="manuscript-tags">
