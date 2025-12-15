@@ -46,8 +46,8 @@ A unique blog platform inspired by ancient manuscripts and scrolls.
 
 ## Default Login
 
-- Email: `admin@minimalist.blog`
-- Password: `minimalist2024`
+-: `adminminimalist.blog`
+: `minimalist2024`
 
 ## Design Philosophy
 
