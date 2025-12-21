@@ -31,9 +31,11 @@ export async function renderHome(APP, state) {
         <div class="divider">✦ ✦ ✦</div>
         <div class="search-scroll"><input type="search" id="search" placeholder="Seek words..." value="${state.searchQuery || ''}"></div>
         <div class="manuscripts">${filtered.length ? filtered.map(p => `
-            <div class="manuscript" data-post-id="${p.id}" style="${p.is_pinned ? 'border-color:#D4AF37;background:#fffdf5;' : ''}"> <div class="manuscript-header">
+            <div class="manuscript" data-post-id="${p.id}" style="${p.is_pinned ? 'border-color:#D4AF37;background:#fffdf5;' : ''}"> 
+                <div class="manuscript-header">
                     <h2 class="manuscript-title">
-                        ${p.is_pinned ? '<span class="pinned-badge">📌 Top</span>' : ''} ${renderIcon(p.icon, 'list-icon')} 
+                        ${p.is_pinned ? '<span class="pinned-badge">📌 Top</span>' : ''} 
+                        ${renderIcon(p.icon, 'list-icon')} 
                         ${highlightText(p.title, state.searchQuery)}
                     </h2>
                     <div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div>
@@ -142,41 +144,28 @@ export function renderLogin(APP, router) {
     });
 }
 
-// --- >>> 核心修复：Admin 面板 (包含 Pin 按钮) <<< ---
+// --- Admin (包含置顶按钮) ---
 export async function renderAdmin(APP, router) {
     const posts = await postsService.getAllPosts();
+    APP.innerHTML = `<div class="admin-header"><h2 class="admin-title">Scriptorium</h2><button class="btn-primary" data-link="/create">✎ New Post</button></div><div class="admin-ledger">${posts.map(p => `
+      <div class="ledger-entry" style="${p.is_pinned ? 'border-left:4px solid #D4AF37;background:#fffdf5;' : ''}">
+        <div class="entry-info"><h3>${p.is_pinned ? '📌 ' : ''}${renderIcon(p.icon, 'list-icon')} ${p.title} ${p.is_draft?'<span style="color:#999">[Draft]</span>':''}</h3><small>${new Date(p.created_at).toLocaleDateString()}</small></div>
+        <div class="entry-actions">
+            <button class="btn-secondary" data-pin="${p.id}" style="${p.is_pinned ? 'color:#D4AF37;border-color:#D4AF37;' : ''}">${p.is_pinned ? 'Unpin' : 'Pin'}</button>
+            <button class="btn-secondary" data-link="/edit/${p.id}">Edit</button>
+            <button class="btn-danger" data-del="${p.id}">Del</button>
+        </div>
+      </div>`).join('')}</div>${renderFooter()}`;
     
-    APP.innerHTML = `
-      <div class="admin-header"><h2 class="admin-title">Scriptorium</h2><button class="btn-primary" data-link="/create">✎ New Post</button></div>
-      <div class="admin-ledger">
-        ${posts.map(p => `
-          <div class="ledger-entry" style="${p.is_pinned ? 'border-left: 4px solid #D4AF37;' : ''}">
-            <div class="entry-info">
-                <h3>${p.is_pinned ? '📌 ' : ''}${p.title} ${p.is_draft?'<span style="color:#999">[Draft]</span>':''}</h3>
-                <small>${new Date(p.created_at).toLocaleDateString()}</small>
-            </div>
-            <div class="entry-actions">
-                <button class="btn-secondary" data-pin="${p.id}" style="${p.is_pinned ? 'color:#D4AF37;border-color:#D4AF37;' : ''}">${p.is_pinned ? 'Unpin' : 'Pin'}</button>
-                <button class="btn-secondary" data-link="/edit/${p.id}">Edit</button>
-                <button class="btn-danger" data-del="${p.id}">Del</button>
-            </div>
-          </div>`).join('')}
-      </div>
-      ${renderFooter()}
-    `;
-
-    // 绑定事件：置顶
     document.querySelectorAll('[data-pin]').forEach(b => b.addEventListener('click', async e => {
         const id = e.target.dataset.pin;
         const post = posts.find(p => p.id == id);
         try {
             await postsService.updatePost(id, { is_pinned: !post.is_pinned });
-            router.route(); // 刷新页面
-            UI.showToast(post.is_pinned ? 'Unpinned' : 'Pinned to top!', 'success');
+            router.route(); UI.showToast(post.is_pinned ? 'Unpinned' : 'Pinned to top!', 'success');
         } catch(err) { UI.showToast(err.message, 'error'); }
     }));
 
-    // 绑定事件：删除
     document.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async e => {
         if(confirm('Delete forever?')) { await postsService.deletePost(e.target.dataset.del); router.route(); UI.showToast('Deleted.', 'info'); }
     }));
@@ -223,21 +212,67 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // Editor logic...
+    // Icon
     const iconInput = document.getElementById('picon');
     const updateIcon = () => document.getElementById('icon-preview').innerHTML = renderIcon(iconInput.value || '📝');
     iconInput.addEventListener('input', updateIcon);
     document.getElementById('random-icon-btn').addEventListener('click', () => { iconInput.value = ['🚀','💡','🔥','✨','📝','📚','🎨','💻','🪐','🌊'][Math.floor(Math.random()*10)]; updateIcon(); });
 
+    // Crop (Global Event)
     let cropData = post.crop_data || null, isDrawing = false, startX, startY;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
-    els.btn.addEventListener('click', () => { const url = document.getElementById('pi').value; if(!url) return UI.showToast('Input image URL first!', 'error'); els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display='none'; });
+    
+    els.btn.addEventListener('click', () => { 
+        const url = document.getElementById('pi').value; 
+        if(!url) return UI.showToast('Input image URL first!', 'error'); 
+        els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display='none'; 
+    });
+    
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
-    
-    els.wrapper.onmousedown = e => { e.preventDefault(); isDrawing = true; const r = els.img.getBoundingClientRect(); startX = e.clientX - r.left; startY = e.clientY - r.top; els.box.style.left=startX+'px'; els.box.style.top=startY+'px'; els.box.style.width='0px'; els.box.style.height='0px'; els.box.style.display='block'; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); };
-    const onMove = e => { if(!isDrawing) return; const r = els.img.getBoundingClientRect(); let cX = Math.max(0, Math.min(e.clientX - r.left, els.img.width)), cY = Math.max(0, Math.min(e.clientY - r.top, els.img.height)); els.box.style.width = Math.abs(cX-startX)+'px'; els.box.style.height = Math.abs(cY-startY)+'px'; els.box.style.left = Math.min(cX,startX)+'px'; els.box.style.top = Math.min(cY,startY)+'px'; };
-    const onUp = () => { isDrawing = false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
-    
+
+    els.wrapper.onmousedown = e => {
+        e.preventDefault(); 
+        isDrawing = true;
+        const rect = els.img.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        
+        els.box.style.left = startX + 'px';
+        els.box.style.top = startY + 'px';
+        els.box.style.width = '0px';
+        els.box.style.height = '0px';
+        els.box.style.display = 'block';
+        
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    };
+
+    const onMove = e => {
+        if (!isDrawing) return;
+        const rect = els.img.getBoundingClientRect();
+        let currX = e.clientX - rect.left;
+        let currY = e.clientY - rect.top;
+        
+        currX = Math.max(0, Math.min(currX, rect.width));
+        currY = Math.max(0, Math.min(currY, rect.height));
+        
+        const width = Math.abs(currX - startX);
+        const height = Math.abs(currY - startY);
+        const left = Math.min(currX, startX);
+        const top = Math.min(currY, startY);
+        
+        els.box.style.width = width + 'px';
+        els.box.style.height = height + 'px';
+        els.box.style.left = left + 'px';
+        els.box.style.top = top + 'px';
+    };
+
+    const onUp = () => {
+        isDrawing = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+    };
+
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
         const sX = els.img.naturalWidth / els.img.width, sY = els.img.naturalHeight / els.img.height;
         cropData = { x: Math.round(parseFloat(els.box.style.left)*sX), y: Math.round(parseFloat(els.box.style.top)*sY), width: Math.round(parseFloat(els.box.style.width)*sX), height: Math.round(parseFloat(els.box.style.height)*sY), containerW: els.img.width, containerH: els.img.height, left: -(parseFloat(els.box.style.left)||0), top: -(parseFloat(els.box.style.top)||0) };
