@@ -21,15 +21,15 @@ const state = {
     : isNightTime()
 };
 
-// --- 新增：自动注入星星闪烁的 CSS 样式 ---
-// 这样你就不需要修改 index.html 了
-function injectStarStyles() {
-  const styleId = 'minimalist-star-styles';
-  if (document.getElementById(styleId)) return; // 避免重复注入
+// --- 样式注入：包含星星闪烁 + 下雪效果 ---
+function injectGlobalStyles() {
+  const styleId = 'minimalist-global-styles';
+  if (document.getElementById(styleId)) return;
 
   const style = document.createElement('style');
   style.id = styleId;
   style.innerHTML = `
+    /* 星星闪烁动画 */
     @keyframes twinkle {
         0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
         50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
@@ -44,8 +44,102 @@ function injectStarStyles() {
     }
     .star-icon.left { animation-delay: 0s; }
     .star-icon.right { animation-delay: 1.5s; }
+
+    /* 下雪效果动画 */
+    @keyframes snowfall {
+        0% {
+            transform: translateY(-10px) translateX(0) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(300px) translateX(20px) rotate(360deg);
+            opacity: 0;
+        }
+    }
+    
+    /* 确保 Hero 区域可以关住雪花 */
+    .hero {
+        position: relative !important; 
+        overflow: hidden !important;
+    }
+
+    .snowflake {
+        position: absolute;
+        top: -10px;
+        background: white;
+        border-radius: 50%;
+        pointer-events: none; /* 让雪花不挡鼠标点击 */
+        z-index: 1;
+        box-shadow: 0 0 5px rgba(255,255,255,0.8);
+    }
   `;
   document.head.appendChild(style);
+}
+
+// --- 日期检查逻辑：是否在冬季下雪期 ---
+function isSnowSeason() {
+    const now = new Date();
+    const month = now.getMonth() + 1; // JS月份是0-11，所以+1变1-12
+    const day = now.getDate();
+
+    // 逻辑：
+    // 1. 如果是 12 月 (12月初开始) -> 开启
+    // 2. 如果是 1 月 (全月) -> 开启
+    // 3. 如果是 2 月，且日期小于等于 10 号 (2月初结束) -> 开启
+    if (month === 12) return true;
+    if (month === 1) return true;
+    if (month === 2 && day <= 10) return true; // 这里控制2月几号结束，目前是10号
+
+    return false;
+}
+
+// --- 下雪逻辑：只在 Hero 区域下雪 + 日期限制 ---
+function initSnowEffect() {
+    // 第一步：先检查日期，如果不是冬天，直接退出，不生成雪花
+    if (!isSnowSeason()) {
+        console.log('Not snow season yet. Winter is coming...');
+        return; 
+    }
+
+    const heroSection = document.querySelector('.hero');
+    if (!heroSection) return;
+
+    // 清除可能存在的旧定时器，防止重复
+    if (window.snowInterval) clearInterval(window.snowInterval);
+
+    window.snowInterval = setInterval(() => {
+        // 如果页面切换了，找不到 hero 了，就停止下雪
+        if (!document.querySelector('.hero')) {
+            clearInterval(window.snowInterval);
+            return;
+        }
+
+        const snowflake = document.createElement('div');
+        snowflake.classList.add('snowflake');
+        
+        // 随机大小
+        const size = Math.random() * 4 + 2 + 'px'; // 2px 到 6px
+        snowflake.style.width = size;
+        snowflake.style.height = size;
+
+        // 随机水平位置
+        snowflake.style.left = Math.random() * 100 + '%';
+
+        // 随机动画时长 (越慢看起来越飘逸)
+        const duration = Math.random() * 5 + 5 + 's'; // 5s 到 10s
+        snowflake.style.animation = `snowfall ${duration} linear forwards`;
+
+        // 稍微透明一点，更有质感
+        snowflake.style.opacity = Math.random() * 0.5 + 0.3;
+
+        heroSection.appendChild(snowflake);
+
+        // 动画结束后移除元素
+        setTimeout(() => {
+            snowflake.remove();
+        }, 10000); 
+
+    }, 300); // 每300毫秒生成一片雪花
 }
 
 function updateAuthUI() {
@@ -132,6 +226,12 @@ const router = {
     APP.innerHTML = '<div class="loading">Unrolling the scroll...</div>';
     window.scrollTo(0, 0);
 
+    // 切换页面时，清除之前的雪花定时器，避免内存泄漏
+    if (window.snowInterval) {
+        clearInterval(window.snowInterval);
+        window.snowInterval = null;
+    }
+
     try {
       if (path === '/') await renderHome();
       else if (path === '/login') renderLogin();
@@ -153,7 +253,7 @@ async function renderHome() {
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
   const tags = [...new Set(state.posts.flatMap(p => p.tags || []))];
 
-  // --- 修改点：在标题两侧加入了星星 span 标签 ---
+  // --- 首页结构 ---
   APP.innerHTML = `
     <div class="hero fade-in">
       <h1>
@@ -180,6 +280,9 @@ async function renderHome() {
 
     <div class="manuscripts" id="manuscripts"></div>
   `;
+
+  // --- 关键点：渲染完首页HTML后，启动下雪（带季节检查） ---
+  setTimeout(initSnowEffect, 100); 
 
   const popularPosts = await postsService.getPopularPosts(5);
   if (popularPosts.length > 0) {
@@ -1222,9 +1325,7 @@ function checkAutoNightMode() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 新增：在这里调用样式注入函数 ---
-  injectStarStyles();
-  
+  injectGlobalStyles(); // 调用样式注入
   updateAuthUI();
   router.init();
 
