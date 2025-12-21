@@ -19,7 +19,7 @@ function renderIcon(iconStr, className = '') {
     return `<span class="${className}">${iconStr}</span>`;
 }
 
-// --- Home ---
+// --- Home (>>> 核心修复：首页图片列表 <<<) ---
 export async function renderHome(APP, state) {
   state.posts = await postsService.getAllPosts();
   const renderList = () => {
@@ -40,13 +40,12 @@ export async function renderHome(APP, state) {
                     </h2>
                     <div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div>
                 </div>
-                ${p.image ? (p.crop_data ? `
-                    <div style="position:relative;width:100%;height:300px;overflow:hidden;border-radius:4px;margin:15px 0;box-shadow:inset 0 0 20px rgba(0,0,0,0.1);">
-                        <img src="${p.image}" style="position:absolute; object-fit: cover;
-                            width:${p.crop_data.containerW}px; height:${p.crop_data.containerH}px;
-                            left:${p.crop_data.left}px; top:${p.crop_data.top}px;" loading="lazy">
-                    </div>` 
-                    : `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">`) : ''}
+                
+                ${p.image ? `
+                    <div class="manuscript-image-container" style="position:relative; width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
+                        <img src="${p.image}" style="width:100%; height:100%; object-fit: cover; transition: transform 0.3s;" loading="lazy" alt="${p.title}">
+                    </div>` : ''}
+                
                 <p class="manuscript-excerpt">${highlightText(p.content?.substring(0, 150), state.searchQuery)}...</p>
                 <div class="manuscript-footer"><span>👁 ${p.view_count||0}</span></div>
             </div>`).join('') : '<div class="empty-scroll"><h3>No manuscripts found</h3></div>'}
@@ -74,13 +73,12 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const likes = post.likes || 0;
   const isLiked = localStorage.getItem(`liked_${id}`);
 
+  // 详情页大图也采用 Cover 模式，保证美观
   let imageHTML = '';
   if (post.image) {
-      if (post.crop_data) {
-          imageHTML = `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:cover; width:100%; max-height:500px;"></div>`;
-      } else {
-          imageHTML = `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};"></div>`;
-      }
+      imageHTML = `<div class="single-image-container" style="width:100%; height:auto; max-height:500px; overflow:hidden; border-radius:8px; margin-bottom:30px;">
+        <img src="${post.image}" class="single-image" style="width:100%; height:100%; object-fit:cover;">
+      </div>`;
   }
 
   APP.innerHTML = `
@@ -144,7 +142,7 @@ export function renderLogin(APP, router) {
     });
 }
 
-// --- Admin (包含置顶按钮) ---
+// --- Admin ---
 export async function renderAdmin(APP, router) {
     const posts = await postsService.getAllPosts();
     APP.innerHTML = `<div class="admin-header"><h2 class="admin-title">Scriptorium</h2><button class="btn-primary" data-link="/create">✎ New Post</button></div><div class="admin-ledger">${posts.map(p => `
@@ -274,8 +272,13 @@ export async function renderEditor(APP, id, router) {
     };
 
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
-        const sX = els.img.naturalWidth / els.img.width, sY = els.img.naturalHeight / els.img.height;
-        cropData = { x: Math.round(parseFloat(els.box.style.left)*sX), y: Math.round(parseFloat(els.box.style.top)*sY), width: Math.round(parseFloat(els.box.style.width)*sX), height: Math.round(parseFloat(els.box.style.height)*sY), containerW: els.img.width, containerH: els.img.height, left: -(parseFloat(els.box.style.left)||0), top: -(parseFloat(els.box.style.top)||0) };
+        // 保存关键数据用于列表展示
+        cropData = { 
+            containerW: els.img.width, 
+            containerH: els.img.height, 
+            left: -(parseFloat(els.box.style.left)||0), 
+            top: -(parseFloat(els.box.style.top)||0) 
+        };
         UI.showToast('Crop Applied!', 'success'); els.container.classList.add('hidden');
     });
 
