@@ -1,7 +1,7 @@
 // src/lib/visuals.js
+// 这是一个占位文件，函数全部为空，为了消除报错。
 
-// 这是一个兼容文件，函数全部为空，防止报错。
-// 功能已转移到 styles.js 和 ui.js。
+export const placeholder = true;
 
 export function injectGlobalStyles() {}
 export function initReadingProgress() {}
