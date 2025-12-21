@@ -16,10 +16,22 @@ export function injectGlobalStyles() {
     .hero { position: relative !important; overflow: hidden !important; }
     .snowflake { position: absolute; top: -10px; background: white; border-radius: 50%; pointer-events: none; z-index: 1; box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 
-    /* --- 阅读进度条 --- */
-    #reading-progress { position: fixed; top: 0; left: 0; width: 0%; height: 4px; background: linear-gradient(90deg, var(--gold), var(--burgundy)); z-index: 9999; transition: width 0.1s ease-out; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+    /* --- 阅读进度条 (已增强) --- */
+    #reading-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 0%;
+        height: 5px; /* 稍微加粗一点 */
+        background: #d4af37; /* 备用金色 */
+        background: linear-gradient(90deg, var(--gold, #d4af37), var(--burgundy, #800020));
+        z-index: 2147483647; /* 确保层级最高，不被导航栏遮挡 */
+        transition: width 0.1s ease-out;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+        pointer-events: none;
+    }
 
-    /* --- >>> 新增：图片裁剪样式 <<< --- */
+    /* --- 图片裁剪样式 --- */
     .image-crop-container { margin: 20px 0; padding: 20px; background: var(--parchment); border: 2px solid var(--gold); }
     .hidden { display: none !important; }
     #crop-wrapper { position: relative; display: inline-block; max-width: 100%; border: 2px solid var(--gold); user-select: none; cursor: crosshair; }
@@ -29,8 +41,35 @@ export function injectGlobalStyles() {
   document.head.appendChild(style);
 }
 
-// ... (以下代码保持不变，请确保包含 isSnowSeason, initSnowEffect, updateClock, updateProgressBar, updatePageMeta) ...
-// 为了方便你复制，我把剩下的函数也贴在这里，确保文件完整：
+// --- 进度条逻辑 (核心修复) ---
+function ensureProgressBar() {
+    let bar = document.getElementById('reading-progress');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'reading-progress';
+        document.body.appendChild(bar); // 直接挂载到 body，不依赖 APP 容器
+    }
+    return bar;
+}
+
+export function updateProgressBar() {
+    // 只有在文章页面才显示进度条 (URL包含 /post/)
+    if (!window.location.pathname.startsWith('/post/')) {
+        const bar = document.getElementById('reading-progress');
+        if (bar) bar.style.width = '0%';
+        return;
+    }
+
+    const progressBar = ensureProgressBar();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    
+    // 防止除以0
+    const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = scrollPercent + '%';
+}
+
+// ... (以下代码保持不变) ...
 
 function isSnowSeason() {
     const now = new Date();
@@ -84,16 +123,6 @@ export function updateClock() {
     lunarStr = lunarStr.replace(/^\d+/, ''); 
   } catch (e) { console.warn('Lunar calendar not supported'); }
   clockDisplay.innerHTML = `<div style="font-size: 1rem; font-weight: 600;">${timeStr}</div><div style="font-size: 0.85rem; opacity: 0.8;">${dateStr}</div>${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', 'STKaiti', serif;">农历 ${lunarStr}</div>` : ''}`;
-}
-
-export function updateProgressBar() {
-    const progressBar = document.getElementById('reading-progress');
-    if (progressBar) {
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPercent = (scrollTop / docHeight) * 100;
-        progressBar.style.width = scrollPercent + '%';
-    }
 }
 
 export function updatePageMeta(post) {
