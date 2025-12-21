@@ -1,0 +1,220 @@
+// src/lib/views.js
+import { postsService } from './posts.js';
+import { commentsService } from './comments.js';
+import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
+import { authService } from './auth.js';
+
+// --- 首页渲染 ---
+export async function renderHome(APP, state, router) {
+  state.posts = await postsService.getAllPosts();
+  const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
+  const tags = [...new Set(state.posts.flatMap(p => p.tags || []))];
+
+  APP.innerHTML = `
+    <div class="hero fade-in">
+      <h1><span class="star-icon left">✦</span> Minimalist <span class="star-icon right">✦</span></h1>
+      <p class="hero-subtitle">Ancient Wisdom, Modern Stories</p>
+    </div>
+    <div class="divider">✦ ✦ ✦</div>
+    <div id="popular-posts-container"></div>
+    <div class="search-scroll"><input type="search" id="search" placeholder="Seek the words within..."></div>
+    <div class="filter-tags">
+      <div class="wax-seal active" data-filter="all">All Manuscripts</div>
+      ${categories.map(c => `<div class="wax-seal" data-filter="category:${c}">${c}</div>`).join('')}
+      ${tags.map(t => `<div class="wax-seal" data-filter="tag:${t}">#${t}</div>`).join('')}
+    </div>
+    <div class="manuscripts" id="manuscripts"></div>
+  `;
+
+  // 热门文章
+  const popularPosts = await postsService.getPopularPosts(5);
+  if (popularPosts.length > 0) {
+    document.getElementById('popular-posts-container').innerHTML = `
+      <div class="popular-posts-section">
+        <h2 class="section-title">🔥 Most Popular</h2>
+        <div class="popular-posts-list">
+          ${popularPosts.map((p, index) => `
+            <div class="popular-post-item" data-post-id="${p.id}">
+              <span class="popular-rank">#${index + 1}</span>
+              <div class="popular-post-info"><h4>${p.title}</h4><p class="popular-post-meta">${p.view_count || 0} views • ${p.category || 'Uncategorized'}</p></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // 渲染文章列表逻辑
+  const renderList = () => {
+      let filtered = state.posts;
+      if (state.searchQuery) filtered = filtered.filter(p => p.title?.toLowerCase().includes(state.searchQuery) || p.content?.toLowerCase().includes(state.searchQuery));
+      if (state.selectedCategory) filtered = filtered.filter(p => p.category === state.selectedCategory);
+      if (state.selectedTag) filtered = filtered.filter(p => p.tags?.includes(state.selectedTag));
+
+      const container = document.getElementById('manuscripts');
+      if (!filtered.length) { container.innerHTML = '<div class="empty-scroll"><h3>No manuscripts found</h3></div>'; return; }
+
+      container.innerHTML = filtered.map(p => `
+        <div class="manuscript" data-post-id="${p.id}">
+          <div class="manuscript-header"><h2 class="manuscript-title">${p.title}</h2><div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div></div>
+          <div class="manuscript-meta"><span>✎ ${p.category || 'Uncategorized'}</span></div>
+          ${p.image ? `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">` : ''}
+          <p class="manuscript-excerpt">${p.content?.substring(0, 150) || ''}...</p>
+          <div class="manuscript-footer"><div class="manuscript-tags">${(p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div><span>👁 ${p.view_count||0}</span></div>
+        </div>
+      `).join('');
+  };
+  renderList();
+
+  // 事件绑定
+  document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
+  document.querySelectorAll('.wax-seal').forEach(seal => seal.addEventListener('click', e => {
+      document.querySelectorAll('.wax-seal').forEach(s => s.classList.remove('active')); e.target.classList.add('active');
+      const f = e.target.dataset.filter;
+      if(f==='all') {state.selectedCategory=null;state.selectedTag=null;}
+      else if(f.startsWith('category:')) {state.selectedCategory=f.split(':')[1];state.selectedTag=null;}
+      else if(f.startsWith('tag:')) {state.selectedTag=f.split(':')[1];state.selectedCategory=null;}
+      renderList();
+  }));
+}
+
+// --- 文章详情页渲染 ---
+export async function renderPost(APP, id, router, updateMetaCallback) {
+  const post = await postsService.getPostById(id);
+  if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
+
+  // 增加阅读量 & 防刷
+  try {
+      const key = `has_viewed_post_${id}`;
+      if (!sessionStorage.getItem(key)) {
+          const newViews = (post.view_count || 0) + 1;
+          post.view_count = newViews; 
+          sessionStorage.setItem(key, 'true');
+          postsService.updatePost(id, { view_count: newViews }).catch(console.error);
+      }
+  } catch (e) { console.error(e); }
+
+  // 上一篇/下一篇逻辑
+  const all = await postsService.getAllPosts();
+  const pubs = all.filter(p => !p.is_draft);
+  const idx = pubs.findIndex(p => p.id === id);
+  const prev = idx < pubs.length - 1 ? pubs[idx + 1] : null;
+  const next = idx > 0 ? pubs[idx - 1] : null;
+
+  if (updateMetaCallback) updateMetaCallback(post);
+
+  const charCount = post.content ? post.content.length : 0;
+  const readTime = Math.max(1, Math.ceil(charCount / 400));
+  const content = DOMPurify.sanitize(marked.parse(post.content || ''));
+  const comments = await commentsService.getCommentsByPostId(id);
+
+  APP.innerHTML = `
+    <div id="reading-progress"></div>
+    <div class="single-manuscript fade-in">
+      <h1 class="single-title">${post.title}</h1>
+      <div class="single-meta">
+        <div>Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count} views</div>
+        <div style="font-size:1rem;color:var(--gold);margin-top:5px;">📚 预计阅读 ${readTime} 分钟</div>
+      </div>
+      ${post.image ? `<div class="single-image-container"><img src="${post.image}" class="single-image" style="width:100%;object-fit:${post.image_fit||'contain'};"></div>` : ''}
+      <div class="article-with-toc"><div id="toc-container"></div><article class="article-content" id="article-content">${content}</article></div>
+    </div>
+    <div class="post-navigation">
+      ${prev ? `<a href="#" class="nav-post nav-prev" data-link="/post/${prev.id}"><span class="nav-label">← 上一篇</span><span class="nav-title">${prev.title}</span></a>` : '<div></div>'}
+      ${next ? `<a href="#" class="nav-post nav-next" data-link="/post/${next.id}"><span class="nav-label">下一篇 →</span><span class="nav-title">${next.title}</span></a>` : '<div></div>'}
+    </div>
+    <div id="comments-section"><div class="divider">✦ Comments (${comments.length}) ✦</div>
+      <div class="form-container"><h3 class="form-title" style="font-size:1.5rem">Leave a Comment</h3><form id="comment-form"><div class="form-group"><label>Name</label><input type="text" id="cn" required></div><div class="form-group"><label>Email</label><input type="email" id="ce" required></div><div class="form-group"><label>Comment</label><textarea id="cc" rows="1" required></textarea></div><button type="submit" class="btn-primary">Post</button></form></div>
+      <div id="comments-list"></div>
+    </div>
+  `;
+
+  // TOC
+  const headings = generateTOC(post.content);
+  if (headings.length > 0) {
+      document.getElementById('toc-container').innerHTML = renderTOC(headings);
+      document.getElementById('article-content').innerHTML = injectHeadingIds(content);
+      // TOC点击滚动
+      document.querySelectorAll('.toc-link').forEach(l => l.addEventListener('click', e => {
+          e.preventDefault(); 
+          document.getElementById(l.getAttribute('href').substring(1))?.scrollIntoView({behavior:'smooth'});
+      }));
+  }
+
+  // 评论渲染
+  renderCommentsList(comments);
+  document.getElementById('comment-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+          await commentsService.createComment(id, document.getElementById('cn').value, document.getElementById('ce').value, document.getElementById('cc').value);
+          router.route(); // Reload
+      } catch(err) { alert(err.message); }
+  });
+}
+
+function renderCommentsList(comments) {
+    const list = document.getElementById('comments-list');
+    if(!comments.length) { list.innerHTML = '<p style="text-align:center;padding:40px;color:var(--sepia);">No comments yet.</p>'; return; }
+    
+    // 简单递归渲染
+    const renderTree = (c, d=0) => `
+        <div style="margin-left:${d*40}px;margin-bottom:20px;" class="comment-item">
+            <div class="manuscript" style="padding:20px;">
+                <div style="color:var(--burgundy);font-weight:bold;">${c.author_name} <span style="font-weight:normal;color:var(--sepia);font-size:0.8em;">${new Date(c.created_at).toLocaleDateString()}</span></div>
+                <p>${c.content}</p>
+                <button class="btn-reply" data-cid="${c.id}" style="font-size:0.8em;background:none;border:1px solid var(--sepia);padding:2px 8px;cursor:pointer;">回复</button>
+                <div id="reply-${c.id}" style="display:none;margin-top:10px;"><form class="reply-form" data-pid="${c.id}"><input placeholder="Name" class="rn" required><input placeholder="Email" class="re" required><textarea placeholder="Reply..." class="rc" required></textarea><button type="submit">Send</button></form></div>
+            </div>
+            ${c.replies?.map(r => renderTree(r, d+1)).join('') || ''}
+        </div>`;
+    
+    list.innerHTML = comments.map(c => renderTree(c)).join('');
+    
+    // 绑定回复按钮
+    document.querySelectorAll('.btn-reply').forEach(b => b.addEventListener('click', e => {
+        const f = document.getElementById(`reply-${e.target.dataset.cid}`);
+        f.style.display = f.style.display === 'none' ? 'block' : 'none';
+    }));
+    // 绑定回复提交
+    document.querySelectorAll('.reply-form').forEach(f => f.addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+            await commentsService.createComment(window.location.pathname.split('/').pop(), f.querySelector('.rn').value, f.querySelector('.re').value, f.querySelector('.rc').value, f.dataset.pid);
+            window.location.reload();
+        } catch(err) { alert(err.message); }
+    }));
+}
+
+// --- 后台/登录/编辑 简单封装 ---
+export function renderLogin(APP, router) {
+    APP.innerHTML = `<div class="form-container"><h2 class="form-title">Login</h2><form id="login-form"><input type="email" id="le" placeholder="Email" required><input type="password" id="lp" placeholder="Password" required><button type="submit" class="btn-primary" style="width:100%;margin-top:20px;">Sign In</button></form></div>`;
+    document.getElementById('login-form').addEventListener('submit', async e => {
+        e.preventDefault();
+        try {
+            await authService.login(document.getElementById('le').value, document.getElementById('lp').value);
+            router.navigate('/admin');
+        } catch(err) { alert(err.message); }
+    });
+}
+
+export async function renderAdmin(APP, router) {
+    const posts = await postsService.getAllPosts();
+    APP.innerHTML = `<div class="admin-header"><h2 class="admin-title">Scriptorium</h2><button class="btn-primary" data-link="/create">New</button></div><div class="admin-ledger">${posts.map(p => `<div class="ledger-entry"><div class="entry-info"><h3>${p.title} ${p.is_draft?'[Draft]':''}</h3><small>${new Date(p.created_at).toLocaleDateString()}</small></div><div><button class="btn-secondary" data-link="/edit/${p.id}">Edit</button> <button class="btn-danger" data-del="${p.id}">Del</button></div></div>`).join('')}</div>`;
+    document.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async e => {
+        if(confirm('Delete?')) { await postsService.deletePost(e.target.dataset.del); router.route(); }
+    }));
+}
+
+export async function renderEditor(APP, id, router) {
+    let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
+    if(id) post = await postsService.getPostById(id);
+    APP.innerHTML = `<div class="form-container"><h2>${id?'Edit':'New'} Post</h2><form id="post-form"><div class="form-group"><label>Title</label><input id="pt" value="${post.title}" required></div><div class="form-group"><label>Image</label><input id="pi" value="${post.image||''}"></div><div class="form-group"><label>Content</label><textarea id="pc" style="min-height:300px;" required>${post.content||''}</textarea></div><div class="form-group"><label>Category</label><input id="pcat" value="${post.category}"></div><div class="form-group"><label>Tags</label><input id="ptags" value="${(post.tags||[]).join(',')}"></div><button type="submit" class="btn-primary">Save</button> <button type="button" id="draft-btn" class="btn-secondary">Save Draft</button></form></div>`;
+    
+    const save = async (draft) => {
+        const data = { title: document.getElementById('pt').value, content: document.getElementById('pc').value, image: document.getElementById('pi').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), is_draft: draft };
+        if(id) await postsService.updatePost(id, data); else await postsService.createPost(data);
+        router.navigate('/admin');
+    };
+    document.getElementById('post-form').addEventListener('submit', e => { e.preventDefault(); save(false); });
+    document.getElementById('draft-btn').addEventListener('click', () => save(true));
+}
