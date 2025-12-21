@@ -11,18 +11,18 @@ export function injectGlobalStyles() {
     @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
     @keyframes snowfall { 0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(300px) translateX(20px) rotate(360deg); opacity: 0; } }
     @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
-    
+    /* 骨架屏动画 */
+    @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+
     .star-icon { display: inline-block; color: #D4AF37; margin: 0 15px; font-size: 1.5rem; vertical-align: middle; animation: twinkle 3s infinite ease-in-out; }
     .hero { position: relative !important; overflow: hidden !important; }
     .snowflake { position: absolute; top: -10px; background: white; border-radius: 50%; pointer-events: none; z-index: 1; box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 
     /* --- 2. 核心组件 (进度条、Toast、悬浮岛) --- */
     #reading-progress { position: fixed; top: 0; left: 0; width: 0%; height: 6px; background: linear-gradient(90deg, #FFD700, #FF4500); z-index: 2147483647; display: block !important; transition: width 0.1s linear; box-shadow: 0 2px 8px rgba(0,0,0,0.5); pointer-events: none; }
-    
     .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
     .toast-notification { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 12px 24px; border-radius: 50px; font-family: 'Lora', serif; font-size: 0.95rem; box-shadow: 0 5px 20px rgba(0,0,0,0.3); border: 1px solid #D4AF37; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(-20px); transition: all 0.3s; pointer-events: auto; }
     .toast-notification.show { opacity: 1; transform: translateY(0); }
-    
     .floating-bar { position: fixed; bottom: 50px; right: 30px; display: flex; flex-direction: column; gap: 15px; z-index: 99999; opacity: 1; pointer-events: auto; }
     .action-btn { width: 50px; height: 50px; border-radius: 50%; background: #fdfbf7; color: #704214; border: 2px solid #D4AF37; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s; position: relative; }
     .action-btn:hover { transform: scale(1.1); background: #fff; color: #8B0000; }
@@ -36,50 +36,50 @@ export function injectGlobalStyles() {
     .list-icon img { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; vertical-align: middle; }
     .pinned-badge { display: inline-block; background: #D4AF37; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 8px; vertical-align: middle; text-transform: uppercase; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-    /* --- 4. 编辑器布局 --- */
-    .editor-container { display: flex; gap: 20px; align-items: stretch; }
-    .editor-pane { width: 100%; transition: width 0.3s ease; }
-    .editor-pane.split { width: 50%; }
-    .preview-pane { width: 50%; border: 2px solid #D4AF37; border-radius: 6px; padding: 20px; background: #fff; overflow-y: auto; max-height: 600px; }
-    .preview-pane.hidden { display: none !important; }
-    .editor-textarea { width: 100%; background-color: #1e1e1e !important; color: #d4d4d4 !important; font-family: 'Consolas', monospace !important; font-size: 14px !important; line-height: 1.6 !important; padding: 20px !important; border: 2px solid #D4AF37 !important; border-radius: 6px; white-space: pre !important; overflow: auto !important; word-wrap: normal !important; min-height: 600px; resize: vertical; }
-    .editor-textarea:focus { outline: none; border-color: #8B0000 !important; }
-    .icon-input-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #fdfbf7; padding: 10px; border: 1px dashed #D4AF37; border-radius: 6px; }
-    .current-icon-preview { font-size: 2rem; width: 50px; text-align: center; }
-    .current-icon-preview img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
-    /* 图片裁剪 */
-    .image-crop-container { margin: 20px 0; padding: 20px; background: #2a2a2a; border: 2px solid #D4AF37; text-align: center; }
-    .hidden { display: none !important; }
-    #crop-wrapper { position: relative; display: inline-block; max-width: 100%; user-select: none; cursor: crosshair; }
-    #crop-box { position: absolute; border: 1px dashed #fff; outline: 1px dashed #000; display: none; pointer-events: none; z-index: 10; }
-    .crop-controls { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
+    /* --- >>> 核心修复：布局系统 <<< --- */
+    
+    /* 1. 扩大详情页总容器宽度，给侧边栏腾出空间 */
+    .single-manuscript {
+        max-width: 1200px !important; /* >>> 关键：从 800px 加宽到 1200px */
+        margin: 40px auto;
+        padding: 0 20px;
+    }
 
-    /* --- >>> 核心修复：6. 文章详情页布局 (修复错位) <<< --- */
+    /* 2. 左右分栏布局 */
     .article-with-toc {
-        display: flex; /* 开启 Flex 布局，让 TOC 和 Content 并排 */
-        gap: 40px;     /* 间距 */
-        align-items: flex-start; /* 顶部对齐 */
+        display: flex !important;
+        flex-direction: row; /* 强制水平排列 */
+        align-items: flex-start;
+        gap: 50px; /* 增加间距，防止挤在一起 */
         position: relative;
     }
 
+    /* 3. 左侧目录 (Sidebar) */
     #toc {
-        width: 240px;  /* 目录固定宽度 */
-        flex-shrink: 0; /* 禁止目录缩小 */
-        position: sticky; /* 粘性定位 */
-        top: 20px;     /* 距离顶部 20px */
-        max-height: 80vh; /* 防止目录太长 */
+        width: 260px; /* 固定宽度 */
+        flex-shrink: 0; /* 禁止压缩 */
+        position: sticky;
+        top: 40px; /* 距离顶部 */
+        max-height: 80vh;
         overflow-y: auto;
         padding-right: 20px;
-        border-right: 1px solid rgba(212, 175, 55, 0.3); /* 金色分割线 */
-        font-size: 0.9rem;
+        border-right: 1px solid rgba(212, 175, 55, 0.3); /* 右侧分割线 */
+        font-size: 0.95rem;
+        text-align: right; /* 文字靠右，贴近文章 */
+        order: -1; /* 确保在左边 */
     }
     
-    /* 目录为空时隐藏 */
+    #toc a { display: block; margin-bottom: 8px; color: #666; text-decoration: none; transition: 0.2s; border-right: 2px solid transparent; padding-right: 10px; }
+    #toc a:hover, #toc a.active { color: #8B0000; border-right-color: #8B0000; font-weight: bold; }
     #toc:empty { display: none; }
 
+    /* 4. 右侧文章内容 */
     .article-content {
-        flex: 1; /* 占据剩余空间 */
-        min-width: 0; /* >>> 关键修复：防止 Flex 子元素内容溢出 <<< */
+        flex: 1; /* 占据剩余所有空间 */
+        min-width: 0; /* >>> 关键：防止代码块撑破 Flex 容器 */
+        max-width: 800px; /* 限制文字最大宽度，保证阅读体验 */
+        margin: 0 auto; /* 居中 */
+        
         font-size: 1.15rem; 
         line-height: 1.8; 
         color: #333; 
@@ -90,42 +90,71 @@ export function injectGlobalStyles() {
         font-family: 'Lora', sans-serif;
     }
     
-    .article-content p { margin-bottom: 1em !important; }
-    .article-content h1, .article-content h2, .article-content h3 { margin-top: 1.5em !important; margin-bottom: 0.8em !important; font-family: 'Playfair Display', serif; }
-    .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; cursor: zoom-in; border-radius: 4px; }
-    
-    /* 移动端适配：取消分栏 */
-    @media (max-width: 900px) {
-        .article-with-toc { flex-direction: column; }
-        #toc { width: 100%; border-right: none; border-bottom: 1px solid var(--sepia); margin-bottom: 20px; position: relative; }
+    /* 移动端适配：屏幕变窄时，取消分栏，目录变回顶部 */
+    @media (max-width: 1000px) {
+        .single-manuscript { max-width: 100%; }
+        .article-with-toc { flex-direction: column; gap: 20px; }
+        #toc { 
+            width: 100%; 
+            position: relative; 
+            top: 0; 
+            border-right: none; 
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3); 
+            text-align: left; 
+            padding: 0 0 20px 0;
+            order: 0;
+        }
+        .article-content { max-width: 100%; }
     }
 
-    /* --- 其他辅助 --- */
-    .code-wrapper { position: relative; margin: 1.8em 0; border-radius: 8px; overflow: hidden; text-align: left !important; }
-    pre { background: #272822 !important; color: #f8f8f2 !important; padding: 1.2rem !important; margin: 0 !important; overflow-x: auto; font-family: 'Consolas', monospace !important; white-space: pre !important; }
+    /* --- 其他辅助样式 --- */
+    .article-content p { margin-bottom: 1em !important; }
+    .article-content h1, .article-content h2, .article-content h3 { margin-top: 1.5em !important; margin-bottom: 0.8em !important; font-family: 'Playfair Display', serif; }
+    .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; cursor: zoom-in; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    .editor-container { display: flex; gap: 20px; align-items: stretch; }
+    .editor-pane { width: 100%; transition: width 0.3s ease; }
+    .editor-pane.split { width: 50%; }
+    .preview-pane { width: 50%; border: 2px solid #D4AF37; border-radius: 6px; padding: 20px; background: #fff; overflow-y: auto; max-height: 600px; }
+    .preview-pane.hidden { display: none !important; }
+    .editor-textarea { width: 100%; background-color: #1e1e1e !important; color: #d4d4d4 !important; font-family: 'Consolas', monospace !important; font-size: 14px !important; line-height: 1.6 !important; padding: 20px !important; border: 2px solid #D4AF37 !important; border-radius: 6px; white-space: pre !important; overflow: auto !important; word-wrap: normal !important; min-height: 600px; resize: vertical; }
+    .editor-textarea:focus { outline: none; border-color: #8B0000 !important; }
+    
+    .code-wrapper { position: relative; margin: 1.8em 0; border-radius: 8px; overflow: hidden; text-align: left !important; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    pre { background: #272822 !important; color: #f8f8f2 !important; padding: 1.5rem !important; margin: 0 !important; overflow-x: auto; font-family: 'Consolas', monospace !important; white-space: pre !important; }
     .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 0.75rem; padding: 5px 10px; border-radius: 4px; cursor: pointer; opacity: 0; transition: 0.2s; }
     .code-wrapper:hover .copy-btn { opacity: 1; }
-    .selection-popover { position: absolute; background: #222; border-radius: 5px; padding: 5px 10px; display: flex; gap: 10px; z-index: 10000; opacity: 0; pointer-events: none; transition: 0.2s; transform: translateY(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-    .selection-popover.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .popover-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
-    .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s; }
-    .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
-    .lightbox-img { max-width: 95%; max-height: 95%; border: 2px solid #D4AF37; transform: scale(0.9); transition: 0.3s; }
-    .lightbox-overlay.active .lightbox-img { transform: scale(1); }
+    
     .site-footer { margin-top: 80px; padding: 40px 20px; text-align: center; border-top: 1px solid #D4AF37; background: #fdfbf7; color: #704214; }
     .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: bold; color: #8B0000; display: block; margin-bottom: 10px; }
     .footer-link { margin: 0 10px; color: inherit; text-decoration: none; opacity: 0.7; }
     .footer-link:hover { opacity: 1; color: #8B0000; }
-    mark { background-color: rgba(212, 175, 55, 0.4); color: inherit; padding: 0 2px; border-radius: 2px; }
     
-    /* 骨架屏 */
-    @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+    .icon-input-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #fdfbf7; padding: 10px; border: 1px dashed #D4AF37; border-radius: 6px; }
+    .current-icon-preview { font-size: 2rem; width: 50px; text-align: center; }
+    .current-icon-preview img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
+    .image-crop-container { margin: 20px 0; padding: 20px; background: #2a2a2a; border: 2px solid #D4AF37; text-align: center; }
+    .hidden { display: none !important; }
+    #crop-wrapper { position: relative; display: inline-block; max-width: 100%; user-select: none; cursor: crosshair; }
+    #crop-box { position: absolute; border: 1px dashed #fff; outline: 1px dashed #000; display: none; pointer-events: none; z-index: 10; }
+    .crop-controls { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
+    
     .skeleton { animation: shimmer 2s infinite linear; background: linear-gradient(to right, #eee 4%, #f5f5f5 25%, #eee 36%); background-size: 1000px 100%; border-radius: 4px; }
     .skeleton-card { padding: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
     .skeleton-title { height: 28px; width: 60%; margin-bottom: 15px; }
     .skeleton-img { height: 200px; width: 100%; margin-bottom: 15px; }
     .skeleton-text { height: 16px; width: 100%; margin-bottom: 8px; }
     .skeleton-text.short { width: 80%; }
+    
+    .selection-popover { position: absolute; background: #222; border-radius: 5px; padding: 5px 10px; display: flex; gap: 10px; z-index: 10000; opacity: 0; pointer-events: none; transition: 0.2s; transform: translateY(10px); box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+    .selection-popover.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .popover-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
+    
+    .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999999; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+    .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
+    .lightbox-img { max-width: 95%; max-height: 95%; border: 2px solid #D4AF37; transform: scale(0.9); transition: 0.3s; }
+    .lightbox-overlay.active .lightbox-img { transform: scale(1); }
+    mark { background-color: rgba(212, 175, 55, 0.4); color: inherit; padding: 0 2px; border-radius: 2px; }
   `;
   document.head.appendChild(style);
 }
