@@ -3,17 +3,14 @@ import { postsService } from './posts.js';
 import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
-import { initLightbox } from './visuals.js'; // 导入灯箱初始化函数
+import { initLightbox } from './visuals.js';
 
-// --- 辅助：搜索高亮函数 ---
 function highlightText(text, query) {
     if (!query || !text) return text;
-    // 创建不区分大小写的正则
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
 }
 
-// --- 首页渲染 ---
 export async function renderHome(APP, state, router) {
   state.posts = await postsService.getAllPosts();
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
@@ -51,10 +48,9 @@ export async function renderHome(APP, state, router) {
       if (!filtered.length) { container.innerHTML = '<div class="empty-scroll"><h3>No manuscripts found</h3></div>'; return; }
 
       container.innerHTML = filtered.map(p => {
-        // >>> 核心升级：应用搜索高亮 <<<
         const displayTitle = highlightText(p.title, state.searchQuery);
         let excerpt = p.content?.substring(0, 150) || '';
-        excerpt = highlightText(excerpt, state.searchQuery); // 高亮摘要
+        excerpt = highlightText(excerpt, state.searchQuery);
 
         return `
         <div class="manuscript" data-post-id="${p.id}">
@@ -84,8 +80,7 @@ export async function renderHome(APP, state, router) {
   renderList();
 
   const searchInput = document.getElementById('search');
-  searchInput.focus(); // 自动聚焦搜索框
-  // 光标移到最后
+  searchInput.focus(); 
   searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
 
   searchInput.addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
@@ -99,7 +94,6 @@ export async function renderHome(APP, state, router) {
   }));
 }
 
-// --- 文章详情页渲染 ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
@@ -124,13 +118,24 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
 
   const charCount = post.content ? post.content.length : 0;
   const readTime = Math.max(1, Math.ceil(charCount / 400));
-  
-  // 保持所见即所得格式
   const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
   const comments = await commentsService.getCommentsByPostId(id);
 
+  // 初始化点赞数
+  const likes = post.likes || 0;
+  const isLiked = localStorage.getItem(`liked_${id}`);
+
   APP.innerHTML = `
     <div id="reading-progress"></div>
+    
+    <div class="floating-bar" id="floating-bar">
+        <div class="action-btn ${isLiked ? 'liked' : ''}" id="btn-like" title="Like">
+            ♥ <span class="btn-badge" id="like-count">${likes}</span>
+        </div>
+        <div class="action-btn" id="btn-share" title="Copy Link">🔗</div>
+        <div class="action-btn" id="btn-top" title="Top">⬆</div>
+    </div>
+
     <div class="single-manuscript fade-in">
       <h1 class="single-title">${post.title}</h1>
       <div class="single-meta">
@@ -164,8 +169,31 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     </div>
   `;
 
-  // >>> 核心升级：激活灯箱 <<<
   initLightbox();
+
+  // --- 绑定悬浮岛事件 ---
+  // (去掉了滚动监听隐藏逻辑，现在是常驻)
+  
+  // 点赞
+  document.getElementById('btn-like').addEventListener('click', async (e) => {
+      if (localStorage.getItem(`liked_${id}`)) return alert('You already liked this!');
+      const badge = document.getElementById('like-count');
+      const newLikes = parseInt(badge.textContent || 0) + 1;
+      badge.textContent = newLikes;
+      e.currentTarget.classList.add('liked');
+      localStorage.setItem(`liked_${id}`, 'true');
+      try { await postsService.updatePost(id, { likes: newLikes }); } catch (err) { console.error('Like failed', err); }
+  });
+
+  // 分享
+  document.getElementById('btn-share').addEventListener('click', () => {
+      navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied to clipboard! 📋'));
+  });
+
+  // 回到顶部
+  document.getElementById('btn-top').addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 
   const headings = generateTOC(post.content);
   if (headings.length > 0) {
@@ -177,6 +205,7 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       }));
   }
 
+  // 仅保留 TOC 高亮监听
   window.addEventListener('scroll', () => {
     if (headings.length > 0) {
         const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id]');
