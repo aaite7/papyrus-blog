@@ -76,39 +76,32 @@ function injectGlobalStyles() {
   document.head.appendChild(style);
 }
 
-// --- 日期检查逻辑：是否在冬季下雪期 ---
+// --- 日期检查逻辑：是否在冬季下雪期 (12.1 - 2.10) ---
 function isSnowSeason() {
     const now = new Date();
-    const month = now.getMonth() + 1; // JS月份是0-11，所以+1变1-12
+    const month = now.getMonth() + 1; 
     const day = now.getDate();
 
-    // 逻辑：
-    // 1. 如果是 12 月 (12月初开始) -> 开启
-    // 2. 如果是 1 月 (全月) -> 开启
-    // 3. 如果是 2 月，且日期小于等于 10 号 (2月初结束) -> 开启
     if (month === 12) return true;
     if (month === 1) return true;
-    if (month === 2 && day <= 10) return true; // 这里控制2月几号结束，目前是10号
+    if (month === 2 && day <= 10) return true;
 
     return false;
 }
 
-// --- 下雪逻辑：只在 Hero 区域下雪 + 日期限制 ---
+// --- 下雪逻辑 ---
 function initSnowEffect() {
-    // 第一步：先检查日期，如果不是冬天，直接退出，不生成雪花
     if (!isSnowSeason()) {
-        console.log('Not snow season yet. Winter is coming...');
+        console.log('Not snow season yet.');
         return; 
     }
 
     const heroSection = document.querySelector('.hero');
     if (!heroSection) return;
 
-    // 清除可能存在的旧定时器，防止重复
     if (window.snowInterval) clearInterval(window.snowInterval);
 
     window.snowInterval = setInterval(() => {
-        // 如果页面切换了，找不到 hero 了，就停止下雪
         if (!document.querySelector('.hero')) {
             clearInterval(window.snowInterval);
             return;
@@ -117,29 +110,23 @@ function initSnowEffect() {
         const snowflake = document.createElement('div');
         snowflake.classList.add('snowflake');
         
-        // 随机大小
-        const size = Math.random() * 4 + 2 + 'px'; // 2px 到 6px
+        const size = Math.random() * 4 + 2 + 'px';
         snowflake.style.width = size;
         snowflake.style.height = size;
 
-        // 随机水平位置
         snowflake.style.left = Math.random() * 100 + '%';
 
-        // 随机动画时长 (越慢看起来越飘逸)
-        const duration = Math.random() * 5 + 5 + 's'; // 5s 到 10s
+        const duration = Math.random() * 5 + 5 + 's';
         snowflake.style.animation = `snowfall ${duration} linear forwards`;
-
-        // 稍微透明一点，更有质感
         snowflake.style.opacity = Math.random() * 0.5 + 0.3;
 
         heroSection.appendChild(snowflake);
 
-        // 动画结束后移除元素
         setTimeout(() => {
             snowflake.remove();
         }, 10000); 
 
-    }, 300); // 每300毫秒生成一片雪花
+    }, 300);
 }
 
 function updateAuthUI() {
@@ -168,16 +155,21 @@ function updateAuthUI() {
   }
 }
 
+// --- 修改后的时钟函数：增加了农历显示 ---
 function updateClock() {
   const clockDisplay = document.getElementById('clock-display');
   if (!clockDisplay) return;
 
   const now = new Date();
+  
+  // 1. 时间
   const timeStr = now.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   });
+  
+  // 2. 公历日期
   const dateStr = now.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
@@ -185,9 +177,25 @@ function updateClock() {
     weekday: 'long'
   });
 
+  // 3. 农历日期 (使用浏览器原生 Intl API)
+  let lunarStr = '';
+  try {
+    lunarStr = new Intl.DateTimeFormat('zh-CN', {
+      calendar: 'chinese',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(now);
+    // 去掉可能的公历年份数字 (如 "2025乙巳年" -> "乙巳年")，让显示更纯粹
+    lunarStr = lunarStr.replace(/^\d+/, ''); 
+  } catch (e) {
+    console.warn('Lunar calendar not supported on this browser');
+  }
+
   clockDisplay.innerHTML = `
     <div style="font-size: 1rem; font-weight: 600;">${timeStr}</div>
     <div style="font-size: 0.85rem; opacity: 0.8;">${dateStr}</div>
+    ${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', 'STKaiti', serif;">农历 ${lunarStr}</div>` : ''}
   `;
 }
 
@@ -226,7 +234,6 @@ const router = {
     APP.innerHTML = '<div class="loading">Unrolling the scroll...</div>';
     window.scrollTo(0, 0);
 
-    // 切换页面时，清除之前的雪花定时器，避免内存泄漏
     if (window.snowInterval) {
         clearInterval(window.snowInterval);
         window.snowInterval = null;
@@ -253,7 +260,6 @@ async function renderHome() {
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
   const tags = [...new Set(state.posts.flatMap(p => p.tags || []))];
 
-  // --- 首页结构 ---
   APP.innerHTML = `
     <div class="hero fade-in">
       <h1>
@@ -281,7 +287,6 @@ async function renderHome() {
     <div class="manuscripts" id="manuscripts"></div>
   `;
 
-  // --- 关键点：渲染完首页HTML后，启动下雪（带季节检查） ---
   setTimeout(initSnowEffect, 100); 
 
   const popularPosts = await postsService.getPopularPosts(5);
@@ -432,6 +437,18 @@ async function renderPost(id) {
   if (!post) {
     APP.innerHTML = '<div class="error">This manuscript has been lost...</div>';
     return;
+  }
+
+  try {
+      const currentViews = post.view_count || 0;
+      const newViews = currentViews + 1;
+      post.view_count = newViews; 
+      
+      postsService.updatePost(id, { view_count: newViews }).catch(err => {
+          console.warn('Background view count update failed:', err);
+      });
+  } catch (e) {
+      console.error('Error incrementing views:', e);
   }
 
   const allPosts = await postsService.getAllPosts();
