@@ -26,7 +26,7 @@ export function injectGlobalStyles() {
     #crop-box { position: absolute; border: 2px dashed #fff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); display: none; pointer-events: none; z-index: 10; }
     .crop-controls { display: flex; gap: 10px; margin-top: 15px; }
 
-    /* --- 代码编辑器样式 (VS Code 风格) --- */
+    /* --- 代码编辑器样式 --- */
     .editor-textarea {
         background-color: #1e1e1e !important; 
         color: #d4d4d4 !important; 
@@ -63,26 +63,40 @@ export function injectGlobalStyles() {
     .code-wrapper:hover .copy-btn { opacity: 1; }
     .copy-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-1px); }
 
-    /* --- >>> 文章内容样式 (修复溢出 + 移除首字母下沉) <<< --- */
+    /* --- >>> 核心修复：文章内容强制保留格式 <<< --- */
     .article-content {
         font-size: 1.15rem;
-        line-height: 2;
+        line-height: 1.8; /* 稍微调小行高，让对齐更紧凑 */
         color: var(--ink);
-        overflow-wrap: break-word !important; /* 强制长单词换行 */
+        
+        /* 关键：保留空格和换行，但允许自动换行防止撑破 */
+        white-space: pre-wrap !important; 
+        
+        /* 确保长单词断行 */
+        overflow-wrap: break-word !important;
         word-wrap: break-word !important;
         word-break: break-word !important;
+        
         max-width: 100%;
-        text-align: justify; /* 两端对齐，阅读体验更好 */
+        text-align: left; /* 强制左对齐，对齐代码和文本 */
+        font-family: 'Lora', 'Consolas', sans-serif; /* 混合字体优化显示 */
     }
     
+    /* 修正段落间距，因为有了 pre-wrap，回车本身就会产生空行，所以减小 margin */
     .article-content p {
-        margin-bottom: 1.8em;
-        /* text-indent: 2em;  <-- 如果你想要段落缩进可以保留这行，不想要就注释掉 */
+        margin-bottom: 0.5em !important; 
+        margin-top: 0 !important;
     }
 
-    /* 之前这里有 p:first-of-type::first-letter 样式，已被彻底删除 */
-    
-    /* 确保图片、视频不撑破页面 */
+    /* 标题样式 */
+    .article-content h1, 
+    .article-content h2, 
+    .article-content h3 {
+        margin-top: 1.5em !important;
+        margin-bottom: 0.8em !important;
+        font-family: 'Playfair Display', serif;
+    }
+
     .article-content img,
     .article-content iframe,
     .article-content video {
@@ -90,15 +104,15 @@ export function injectGlobalStyles() {
         height: auto !important;
         border-radius: 4px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin: 1em 0;
     }
 
-    /* 优化表格显示 */
     .article-content table {
         display: block;
         width: 100%;
         overflow-x: auto;
         border-collapse: collapse;
-        margin: 20px 0;
+        margin: 1.5em 0;
     }
     .article-content th, .article-content td {
         border: 1px solid var(--sepia);
@@ -108,7 +122,7 @@ export function injectGlobalStyles() {
   document.head.appendChild(style);
 }
 
-// ... (以下函数保持不变) ...
+// ... (以下所有函数保持不变，确保完整复制) ...
 export function loadPrism() {
     if (window.Prism) return;
     const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css'; document.head.appendChild(link);
