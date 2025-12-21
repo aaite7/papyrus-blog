@@ -1,7 +1,9 @@
+// src/main.js
 import { authService } from './lib/auth.js';
-import * as Styles from './lib/styles.js';
-import * as UI from './lib/ui.js';
-import * as Views from './lib/views.js';
+import * as Styles from './lib/styles.js'; // 样式中心
+import * as UI from './lib/ui.js';         // 交互中心
+import * as Views from './lib/views.js';   // 页面中心
+// 注意：不要导入 ./lib/visuals.js
 
 const APP = document.getElementById('app');
 const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
@@ -13,7 +15,6 @@ const router = {
       const link = e.target.closest('[data-link]');
       if (link) { e.preventDefault(); this.navigate(link.dataset.link); }
       const card = e.target.closest('[data-post-id]');
-      // 只有点击卡片且不是点击里面的按钮/链接时才跳转
       if (card && !e.target.closest('button') && !e.target.closest('a')) {
         this.navigate(`/post/${card.dataset.postId}`);
       }
@@ -23,8 +24,6 @@ const router = {
   navigate(path) { window.history.pushState({}, '', path); this.route(); },
   async route() {
     const path = window.location.pathname;
-    
-    // >>> 核心升级：显示高级骨架屏，而不是 Loading 文字 <<<
     APP.innerHTML = UI.renderSkeleton(); 
     window.scrollTo(0, 0);
     
@@ -59,52 +58,30 @@ function updateAuthUI() {
     logoutBtn.classList.add('hidden');
   }
 
-  // Clock
   if (window.clockInterval) clearInterval(window.clockInterval);
   UI.updateClock();
   window.clockInterval = setInterval(UI.updateClock, 1000);
 
-  // Dark Mode
   if (localStorage.getItem('darkMode') === 'true') {
       document.body.classList.add('dark-mode');
       if(toggleBtn) toggleBtn.textContent = '☀';
   }
 }
 
-// >>> 核心升级：全局键盘快捷键 <<<
+// 快捷键
 function initShortcuts() {
     document.addEventListener('keydown', (e) => {
-        // 如果用户正在输入框里打字，不触发快捷键
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-            if (e.key === 'Escape') document.activeElement.blur(); // ESC 退出输入
+            if (e.key === 'Escape') document.activeElement.blur();
             return;
         }
-
-        // / 键：聚焦搜索
         if (e.key === '/') {
             e.preventDefault();
-            const search = document.getElementById('search');
-            if (search) {
-                search.focus();
-                search.select(); // 选中已有文字方便重输
-                UI.showToast('Search focused', 'info');
-            }
+            document.getElementById('search')?.focus();
         }
-
-        // J 键：向下滚动
-        if (e.key.toLowerCase() === 'j') {
-            window.scrollBy({ top: 300, behavior: 'smooth' });
-        }
-
-        // K 键：向上滚动
-        if (e.key.toLowerCase() === 'k') {
-            window.scrollBy({ top: -300, behavior: 'smooth' });
-        }
-        
-        // ESC 键：关闭灯箱或弹窗
-        if (e.key === 'Escape') {
-            document.querySelector('.lightbox-overlay.active')?.classList.remove('active');
-        }
+        if (e.key.toLowerCase() === 'j') window.scrollBy({ top: 300, behavior: 'smooth' });
+        if (e.key.toLowerCase() === 'k') window.scrollBy({ top: -300, behavior: 'smooth' });
+        if (e.key === 'Escape') document.querySelector('.lightbox-overlay.active')?.classList.remove('active');
     });
 }
 
@@ -132,6 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   updateAuthUI();
-  initShortcuts(); // 启动快捷键
+  initShortcuts();
   router.init();
 });
