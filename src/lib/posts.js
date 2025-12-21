@@ -1,15 +1,40 @@
 import { supabase } from './supabase.js';
 
+// This function is no longer needed if the DB returns tags as an array, which it should.
+// We keep a simplified version just in case of malformed data on read.
 const fixPost = (post) => {
   if (!post) return null;
   const newPost = { ...post };
-  if (typeof newPost.tags === 'string') {
-    newPost.tags = newPost.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-  } else if (!Array.isArray(newPost.tags)) {
+  if (!Array.isArray(newPost.tags)) {
+    // If tags are not an array for any reason, default to an empty one.
     newPost.tags = [];
   }
   return newPost;
 };
+
+// This function prepares post data for writing to the DB.
+const preparePostDataForWrite = (postData) => {
+    const data = { ...postData };
+    // If tags are a string, they are likely a JSON stringified array, e.g., '["tag1", "tag2"]'
+    if (data.tags && typeof data.tags === 'string') {
+        try {
+            const parsedTags = JSON.parse(data.tags);
+            if (Array.isArray(parsedTags)) {
+                data.tags = parsedTags;
+            } else {
+                // If it's some other JSON that's not an array, wrap it in an array.
+                data.tags = [parsedTags];
+            }
+        } catch (e) {
+            // If it's not valid JSON, it might be a single tag as a string. Wrap it.
+            // This avoids the malformed array literal by not assuming comma separation.
+            data.tags = [data.tags];
+        }
+    } else if (!Array.isArray(data.tags)) {
+        data.tags = [];
+    }
+    return data;
+}
 
 export const postsService = {
   async getAllPosts() {
@@ -69,10 +94,7 @@ export const postsService = {
   },
 
   async createPost(postData) {
-    const postDataToSave = { ...postData };
-    if (postDataToSave.tags && typeof postDataToSave.tags === 'string') {
-        postDataToSave.tags = postDataToSave.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-    }
+    const postDataToSave = preparePostDataForWrite(postData);
 
     const { data, error } = await supabase
       .from('posts')
@@ -85,10 +107,7 @@ export const postsService = {
   },
 
   async updatePost(id, postData) {
-    const postDataToUpdate = { ...postData };
-    if (postDataToUpdate.tags && typeof postDataToUpdate.tags === 'string') {
-        postDataToUpdate.tags = postDataToUpdate.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-    }
+    const postDataToUpdate = preparePostDataForWrite(postData);
     const { data, error } = await supabase
       .from('posts')
       .update(postDataToUpdate)
