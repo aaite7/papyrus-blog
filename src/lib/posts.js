@@ -1,201 +1,93 @@
-import { supabase } from './supabase.js';
-
-const fixPost = (post) => {
-  if (!post) return null;
-  const newPost = { ...post };
-  if (!Array.isArray(newPost.tags)) {
-    newPost.tags = [];
-  }
-  return newPost;
-};
-
-const preparePostDataForWrite = (postData) => {
-    const data = { ...postData };
-    let tags = data.tags;
-
-    if (!tags) {
-        data.tags = [];
-        return data;
-    }
-
-    // If tags is not an array, make it one.
-    if (!Array.isArray(tags)) {
-        tags = [tags];
-    }
-    
-    // Recursively flatten and parse to handle any level of nesting or stringification.
-    const processArray = (arr) => {
-        let result = [];
-        for (const item of arr) {
-            if (Array.isArray(item)) {
-                result.push(...processArray(item)); // Recurse for nested arrays
-            } else if (typeof item === 'string') {
-                try {
-                    const parsed = JSON.parse(item);
-                    // If parsing results in an array, process it. Otherwise, just add the parsed value.
-                    if (Array.isArray(parsed)) {
-                        result.push(...processArray(parsed));
-                    } else {
-                        result.push(parsed);
-                    }
-                } catch (e) {
-                    // Not a JSON string, add it as is.
-                    result.push(item);
-                }
-            } else {
-                // Not an array or string, just add it.
-                result.push(item);
-            }
-        }
-        return result;
-    };
-
-    const finalTags = processArray(tags);
-
-    // Final cleanup: ensure all elements are non-empty strings.
-    data.tags = finalTags.map(String).filter(tag => tag && tag.trim() !== '');
-    
-    return data;
-};
+// src/lib/posts.js
+import { supabase } from './supabase.js'; // 确保你有这个文件，如果没有请告诉我
 
 export const postsService = {
+  // 1. 获取所有文章 (用于首页和后台)
   async getAllPosts() {
     const { data, error } = await supabase
       .from('posts')
       .select('*')
-      .order('is_pinned', { ascending: false })
-      .order('pinned_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false });
-
     if (error) throw error;
-    return data.map(fixPost);
+    return data;
   },
 
-  async getPopularPosts(limit = 5) {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('is_draft', false)
-      .order('view_count', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data.map(fixPost);
-  },
-
-  async getRelatedPosts(postId, tags, limit = 3) {
-    if (!tags || tags.length === 0) return [];
-
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('is_draft', false)
-      .neq('id', postId)
-      .overlaps('tags', tags)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-    return data.map(fixPost);
-  },
-
+  // 2. 获取单篇文章 (>>> 核心修复：编辑和详情页必须用到它 <<<)
   async getPostById(id) {
     const { data, error } = await supabase
       .from('posts')
       .select('*')
       .eq('id', id)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (data) {
-      await supabase.rpc('increment_view_count', { post_id: id });
-    }
-
-    return fixPost(data);
+      .single();
+    if (error) return null; // 查不到返回空，防止报错
+    return data;
   },
 
+  // 3. 创建新文章
   async createPost(postData) {
-    const postDataToSave = preparePostDataForWrite(postData);
-
+    // 确保字段只包含数据库里有的
+    const { title, content, image, category, tags, is_draft, image_fit, crop_data, icon } = postData;
     const { data, error } = await supabase
       .from('posts')
-      .insert([postDataToSave])
-      .select()
-      .single();
-
+      .insert([{ 
+          title, content, image, category, tags, is_draft, 
+          image_fit, crop_data, icon, // 新增字段
+          view_count: 0, likes: 0 
+      }]);
     if (error) throw error;
     return data;
   },
 
-  async updatePost(id, postData) {
-    const postDataToUpdate = preparePostDataForWrite(postData);
-    const { data, error } = await supabase
+  // 4. 更新文章 (>>> 核心修复：保存编辑内容 <<<)
+  async updatePost(id, updates) {
+    const { error } = await supabase
       .from('posts')
-      .update(postDataToUpdate)
-      .eq('id', id)
-      .select()
-      .single();
-
+      .update(updates)
+      .eq('id', id);
     if (error) throw error;
-    return data;
   },
 
-  async togglePin(id, isPinned) {
-    const updateData = {
-      is_pinned: isPinned,
-      pinned_at: isPinned ? new Date().toISOString() : null
-    };
-    return this.updatePost(id, updateData);
-  },
-
-  async saveDraft(postData) {
-    return this.createPost({ ...postData, is_draft: true });
-  },
-
-  async publishDraft(id) {
-    return this.updatePost(id, { is_draft: false });
-  },
-
+  // 5. 删除文章
   async deletePost(id) {
     const { error } = await supabase
       .from('posts')
       .delete()
       .eq('id', id);
-
     if (error) throw error;
   },
 
-  async searchPosts(query) {
+  // 6. 获取热门文章
+  async getPopularPosts(limit = 5) {
     const { data, error } = await supabase
       .from('posts')
-      .select('*')
-      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data.map(fixPost);
+      .select('id, title, view_count, category')
+      .eq('is_draft', false)
+      .order('view_count', { ascending: false })
+      .limit(limit);
+    if (error) console.error(error);
+    return data || [];
   },
 
-  async getPostsByCategory(category) {
-    const { data, error } = await supabase
+  // 7. 获取相关文章 (根据标签)
+  async getRelatedPosts(currentId, tags, limit = 3) {
+    if (!tags || tags.length === 0) return [];
+    const { data } = await supabase
       .from('posts')
-      .select('*')
-      .eq('category', category)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data.map(fixPost);
+      .select('id, title, image, view_count')
+      .eq('is_draft', false)
+      .neq('id', currentId)
+      .overlaps('tags', tags) // 数组重叠查询
+      .limit(limit);
+    return data || [];
   },
-
-  async getPostsByTag(tag) {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .contains('tags', [tag])
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data.map(fixPost);
+  
+  // 8. 切换置顶状态
+  async togglePin(id, isPinned) {
+      return await this.updatePost(id, { is_pinned: isPinned });
+  },
+  
+  // 9. 发布草稿
+  async publishDraft(id) {
+      return await this.updatePost(id, { is_draft: false });
   }
 };
