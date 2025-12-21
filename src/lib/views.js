@@ -106,8 +106,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const content = DOMPurify.sanitize(marked.parse(post.content || ''));
   const comments = await commentsService.getCommentsByPostId(id);
 
-  // 删除原有的 id="reading-progress" div，因为现在是全局注入
   APP.innerHTML = `
+    <div id="reading-progress"></div>
     <div class="single-manuscript fade-in">
       <h1 class="single-title">${post.title}</h1>
       <div class="single-meta">
@@ -135,8 +135,19 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       ${prev ? `<a href="#" class="nav-post nav-prev" data-link="/post/${prev.id}"><span class="nav-label">← 上一篇</span><span class="nav-title">${prev.title}</span></a>` : '<div></div>'}
       ${next ? `<a href="#" class="nav-post nav-next" data-link="/post/${next.id}"><span class="nav-label">下一篇 →</span><span class="nav-title">${next.title}</span></a>` : '<div></div>'}
     </div>
+    
     <div id="comments-section"><div class="divider">✦ Comments (${comments.length}) ✦</div>
-      <div class="form-container"><h3 class="form-title" style="font-size:1.5rem">Leave a Comment</h3><form id="comment-form"><div class="form-group"><label>Name</label><input type="text" id="cn" required></div><div class="form-group"><label>Email</label><input type="email" id="ce" required></div><div class="form-group"><label>Comment</label><textarea id="cc" rows="1" required></textarea></div><button type="submit" class="btn-primary">Post</button></form></div>
+      <div class="form-container"><h3 class="form-title" style="font-size:1.5rem">Leave a Comment</h3>
+        <form id="comment-form">
+          <div class="form-group"><label>Name</label><input type="text" id="cn" required></div>
+          <div class="form-group"><label>Email</label><input type="email" id="ce" required></div>
+          <div class="form-group">
+            <label>Comment</label>
+            <textarea id="cc" rows="4" style="min-height: 120px;" required></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Post</button>
+        </form>
+      </div>
       <div id="comments-list"></div>
     </div>
   `;
@@ -193,7 +204,14 @@ function renderCommentsList(comments) {
                 <div style="color:var(--burgundy);font-weight:bold;">${c.author_name} <span style="font-weight:normal;color:var(--sepia);font-size:0.8em;">${new Date(c.created_at).toLocaleDateString()}</span></div>
                 <p>${c.content}</p>
                 <button class="btn-reply" data-cid="${c.id}" style="font-size:0.8em;background:none;border:1px solid var(--sepia);padding:2px 8px;cursor:pointer;">回复</button>
-                <div id="reply-${c.id}" style="display:none;margin-top:10px;"><form class="reply-form" data-pid="${c.id}"><input placeholder="Name" class="rn" required><input placeholder="Email" class="re" required><textarea placeholder="Reply..." class="rc" required></textarea><button type="submit">Send</button></form></div>
+                <div id="reply-${c.id}" style="display:none;margin-top:10px;">
+                    <form class="reply-form" data-pid="${c.id}">
+                        <input placeholder="Name" class="rn" required>
+                        <input placeholder="Email" class="re" required>
+                        <textarea placeholder="Reply..." class="rc" style="min-height: 80px;" required></textarea>
+                        <button type="submit">Send</button>
+                    </form>
+                </div>
             </div>
             ${c.replies?.map(r => renderTree(r, d+1)).join('') || ''}
         </div>`;
@@ -232,6 +250,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
+// --- 包含图片裁剪修复的编辑器 ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -248,19 +267,16 @@ export async function renderEditor(APP, id, router) {
           </div>
           <div id="crop-container" class="image-crop-container hidden" style="overflow: auto;">
             <div style="padding:10px;background:#fff3cd;border:1px solid var(--gold);margin-bottom:15px;"><strong>📝 说明：</strong>在图片上按住鼠标拖动来框选区域</div>
-            
             <div id="crop-wrapper" style="position:relative;display:inline-block; border:2px solid var(--gold);">
                 <img id="crop-image" style="display:block; max-width: 100%; max-height: 60vh; width: auto; height: auto; cursor:crosshair; user-select:none;">
                 <div id="crop-box" style="position:absolute; border:2px dashed #8B0000; box-shadow:0 0 0 9999px rgba(0,0,0,0.5); display:none; pointer-events:none; z-index:10;"></div>
             </div>
-
             <div class="crop-controls">
               <button type="button" class="btn-primary" id="apply-crop-btn">✓ 应用</button>
               <button type="button" class="btn-secondary" id="reset-crop-btn">↻ 重置</button>
               <button type="button" class="btn-secondary" id="cancel-crop-btn">✕ 取消</button>
             </div>
           </div>
-          
           <div class="form-group"><label>Fit</label><select id="pfit"><option value="contain" ${post.image_fit==='contain'?'selected':''}>Full</option><option value="cover" ${post.image_fit==='cover'?'selected':''}>Cropped</option></select></div>
           <div class="form-group"><label>Content</label><textarea id="pc" style="min-height:300px;" required>${post.content||''}</textarea></div>
           <div class="form-group"><label>Category</label><input id="pcat" value="${post.category}"></div>
