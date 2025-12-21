@@ -5,7 +5,6 @@ import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 import * as UI from './ui.js';
 
-// --- Helper ---
 function highlightText(text, query) {
     if (!query || !text) return text;
     const regex = new RegExp(`(${query})`, 'gi');
@@ -14,18 +13,12 @@ function highlightText(text, query) {
 function renderFooter() {
     return `<footer class="site-footer"><span class="footer-logo">Minimalist</span><div class="footer-copy">© ${new Date().getFullYear()} Scriptorium.</div></footer>`;
 }
-// >>> 新增：渲染图标组件 <<<
 function renderIcon(iconStr, className = '') {
     if (!iconStr) return '';
-    // 如果是 URL，渲染图片
-    if (iconStr.startsWith('http')) {
-        return `<span class="${className}"><img src="${iconStr}" alt="icon"></span>`;
-    }
-    // 否则渲染 Emoji/文字
+    if (iconStr.startsWith('http')) return `<span class="${className}"><img src="${iconStr}" alt="icon"></span>`;
     return `<span class="${className}">${iconStr}</span>`;
 }
 
-// --- 1. 首页 (Home) ---
 export async function renderHome(APP, state) {
   state.posts = await postsService.getAllPosts();
   const renderList = () => {
@@ -39,9 +32,7 @@ export async function renderHome(APP, state) {
         <div class="manuscripts">${filtered.length ? filtered.map(p => `
             <div class="manuscript" data-post-id="${p.id}">
                 <div class="manuscript-header">
-                    <h2 class="manuscript-title">
-                        ${renderIcon(p.icon, 'list-icon')} ${highlightText(p.title, state.searchQuery)}
-                    </h2>
+                    <h2 class="manuscript-title">${renderIcon(p.icon, 'list-icon')} ${highlightText(p.title, state.searchQuery)}</h2>
                     <div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div>
                 </div>
                 ${p.image ? `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">` : ''}
@@ -56,7 +47,6 @@ export async function renderHome(APP, state) {
   renderList();
 }
 
-// --- 2. 文章详情 (Post) ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">Lost scroll...</div>'; return; }
@@ -80,7 +70,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
         <div class="action-btn" id="btn-top">⬆</div>
     </div>
     <div class="single-manuscript fade-in">
-        ${renderIcon(post.icon, 'single-icon')} <h1 class="single-title">${post.title}</h1>
+        ${renderIcon(post.icon, 'single-icon')}
+        <h1 class="single-title">${post.title}</h1>
         <div class="single-meta">Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count||0}</div>
         ${post.image ? `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};"></div>` : ''}
         <div class="article-with-toc"><div id="toc"></div><article class="article-content">${content}</article></div>
@@ -120,9 +111,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   });
 }
 
-// --- 3. 登录 (Login) ---
 export function renderLogin(APP, router) {
-    APP.innerHTML = `<div class="form-container fade-in"><h2 class="form-title">Login</h2><form id="login-form"><div class="form-group"><label>Email</label><input type="email" id="le" required></div><div class="form-group"><label>Password</label><input type="password" id="lp" required></div><button type="submit" class="btn-primary" style="width:100%;">Sign In</button></form></div>${renderFooter()}`;
+    APP.innerHTML = `<div class="form-container fade-in"><h2 class="form-title">Login</h2><form id="login-form"><input type="email" id="le" placeholder="Email" required><input type="password" id="lp" placeholder="Password" required><button type="submit" class="btn-primary" style="width:100%;margin-top:20px;">Sign In</button></form></div>${renderFooter()}`;
     document.getElementById('login-form').addEventListener('submit', async e => {
         e.preventDefault();
         try {
@@ -132,7 +122,6 @@ export function renderLogin(APP, router) {
     });
 }
 
-// --- 4. 管理后台 (Admin) ---
 export async function renderAdmin(APP, router) {
     const posts = await postsService.getAllPosts();
     APP.innerHTML = `<div class="admin-header"><h2 class="admin-title">Scriptorium</h2><button class="btn-primary" data-link="/create">✎ New Post</button></div><div class="admin-ledger">${posts.map(p => `<div class="ledger-entry"><div class="entry-info"><h3>${renderIcon(p.icon, 'list-icon')} ${p.title} ${p.is_draft?'<span style="color:#999">[Draft]</span>':''}</h3><small>${new Date(p.created_at).toLocaleDateString()}</small></div><div class="entry-actions"><button class="btn-secondary" data-link="/edit/${p.id}">Edit</button><button class="btn-danger" data-del="${p.id}">Del</button></div></div>`).join('')}</div>${renderFooter()}`;
@@ -141,7 +130,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- 5. 编辑器 (Editor) ---
+// --- >>> 修复版：编辑器 (Editor) <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain', icon: '' };
     if(id) post = await postsService.getPostById(id);
@@ -152,15 +141,13 @@ export async function renderEditor(APP, id, router) {
         <form id="post-form">
           <div class="icon-input-wrapper">
              <div class="current-icon-preview" id="icon-preview">${renderIcon(post.icon || '📝')}</div>
-             <div style="flex:1;">
-                <label style="font-size:0.8rem;color:#666;">Page Icon (Emoji or Image URL)</label>
-                <input id="picon" value="${post.icon||''}" placeholder="e.g. 🚀 or https://..." style="width:100%;">
-             </div>
+             <div style="flex:1;"><label style="font-size:0.8rem;color:#666;">Page Icon</label><input id="picon" value="${post.icon||''}" placeholder="e.g. 🚀 or https://..." style="width:100%;"></div>
              <button type="button" class="btn-secondary" id="random-icon-btn">🎲</button>
           </div>
 
           <div class="form-group"><label>Title</label><input id="pt" value="${post.title}" required></div>
           <div class="form-group"><label>Cover Image URL</label><input id="pi" value="${post.image||''}"><button type="button" class="btn-secondary" id="crop-image-btn" style="margin-top:10px;">✂ Crop Cover</button></div>
+          
           <div id="crop-container" class="image-crop-container hidden" style="overflow: auto;">
             <div style="padding:10px;background:#fff3cd;border:1px solid var(--gold);margin-bottom:10px;">Draw box to crop</div>
             <div id="crop-wrapper" style="position:relative;display:inline-block;"><img id="crop-image" style="display:block;max-width:100%;max-height:60vh;"><div id="crop-box" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 999px rgba(0,0,0,0.5);display:none;"></div></div>
@@ -169,7 +156,7 @@ export async function renderEditor(APP, id, router) {
           <div class="form-group"><label>Fit</label><select id="pfit"><option value="contain" ${post.image_fit==='contain'?'selected':''}>Contain</option><option value="cover" ${post.image_fit==='cover'?'selected':''}>Cover</option></select></div>
           
           <div class="form-group">
-            <label style="display:flex;justify-content:space-between;"><span>Content</span><span>Ctrl+I: Random Img | Tab: Indent</span></label>
+            <label style="display:flex;justify-content:space-between;"><span>Content</span><span>Ctrl+I: Img | Tab: Indent</span></label>
             <div class="editor-container">
                 <div class="editor-pane" id="editor-pane"><textarea id="pc" class="editor-textarea" required placeholder="Write...">${post.content||''}</textarea></div>
                 <div class="preview-pane hidden" id="preview-pane"><div id="preview-content" class="article-content"></div></div>
@@ -183,40 +170,32 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // Icon 逻辑
+    // Icon Logic
     const iconInput = document.getElementById('picon');
-    const iconPreview = document.getElementById('icon-preview');
-    const updateIconPreview = () => { iconPreview.innerHTML = renderIcon(iconInput.value || '📝'); };
-    iconInput.addEventListener('input', updateIconPreview);
-    document.getElementById('random-icon-btn').addEventListener('click', () => {
-        const emojis = ['🚀','💡','🔥','✨','📝','📚','🎨','💻','🪐','🌊'];
-        iconInput.value = emojis[Math.floor(Math.random() * emojis.length)];
-        updateIconPreview();
-    });
+    const updateIcon = () => document.getElementById('icon-preview').innerHTML = renderIcon(iconInput.value || '📝');
+    iconInput.addEventListener('input', updateIcon);
+    document.getElementById('random-icon-btn').addEventListener('click', () => { iconInput.value = ['🚀','💡','🔥','✨','📝','📚','🎨','💻','🪐','🌊'][Math.floor(Math.random()*10)]; updateIcon(); });
 
-    // 裁剪逻辑
+    // Crop Logic
     let cropData = post.crop_data || null, isDrawing = false, startX, startY;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
-    
     els.btn.addEventListener('click', () => { const url = document.getElementById('pi').value; if(!url) return UI.showToast('No image URL', 'error'); els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display='none'; });
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
-    
     els.wrapper.onmousedown = e => { e.preventDefault(); isDrawing = true; const r = els.img.getBoundingClientRect(); startX = e.clientX - r.left; startY = e.clientY - r.top; els.box.style.left=startX+'px'; els.box.style.top=startY+'px'; els.box.style.width='0px'; els.box.style.height='0px'; els.box.style.display='block'; };
     els.wrapper.onmousemove = e => { if(!isDrawing) return; const r = els.img.getBoundingClientRect(); const curX = Math.max(0, Math.min(e.clientX - r.left, els.img.width)); const curY = Math.max(0, Math.min(e.clientY - r.top, els.img.height)); els.box.style.width = Math.abs(curX - startX)+'px'; els.box.style.height = Math.abs(curY - startY)+'px'; els.box.style.left = (curX > startX ? startX : curX)+'px'; els.box.style.top = (curY > startY ? startY : curY)+'px'; };
     els.wrapper.onmouseup = () => isDrawing = false;
-    
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
         const sX = els.img.naturalWidth / els.img.width, sY = els.img.naturalHeight / els.img.height;
         cropData = { x: Math.round(parseFloat(els.box.style.left)*sX), y: Math.round(parseFloat(els.box.style.top)*sY), width: Math.round(parseFloat(els.box.style.width)*sX), height: Math.round(parseFloat(els.box.style.height)*sY) };
         UI.showToast('Cropped!', 'success'); els.container.classList.add('hidden');
     });
 
+    // Editor Logic
     const ta = document.getElementById('pc');
     ta.addEventListener('keydown', e => {
         if((e.ctrlKey||e.metaKey) && e.code==='KeyI') { e.preventDefault(); const s=ta.selectionStart; ta.setRangeText(`\n![Img](https://picsum.photos/seed/${Date.now()}/800/450)\n`,s,s,'end'); }
         if(e.key==='Tab') { e.preventDefault(); const s=ta.selectionStart, en=ta.selectionEnd; ta.setRangeText('    ',s,en,'end'); }
     });
-
     let mode = false;
     document.getElementById('toggle-preview-btn').addEventListener('click', () => { 
         mode = !mode; 
@@ -226,7 +205,7 @@ export async function renderEditor(APP, id, router) {
     });
 
     const save = async (draft) => {
-        const data = { title: document.getElementById('pt').value, content: ta.value, image: document.getElementById('pi').value, image_fit: document.getElementById('pfit').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), crop_data: cropData, is_draft: draft, icon: document.getElementById('picon').value };
+        const data = { title: document.getElementById('pt').value, content: ta.value, image: document.getElementById('pi').value, image_fit: document.getElementById('pfit').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), crop_data: cropData, is_draft: draft, icon: iconInput.value };
         if(id) await postsService.updatePost(id, data); else await postsService.createPost(data);
         router.navigate('/admin'); UI.showToast(draft?'Draft Saved':'Published!', 'success');
     };
