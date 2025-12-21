@@ -5,6 +5,7 @@ import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 import * as UI from './ui.js';
 
+// --- Helpers ---
 function highlightText(text, query) {
     if (!query || !text) return text;
     const regex = new RegExp(`(${query})`, 'gi');
@@ -19,7 +20,7 @@ function renderIcon(iconStr, className = '') {
     return `<span class="${className}">${iconStr}</span>`;
 }
 
-// --- Home (>>> 核心修复：首页图片列表 <<<) ---
+// --- 1. 首页 (Home) ---
 export async function renderHome(APP, state) {
   state.posts = await postsService.getAllPosts();
   const renderList = () => {
@@ -41,10 +42,45 @@ export async function renderHome(APP, state) {
                     <div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div>
                 </div>
                 
-                ${p.image ? `
+                ${p.image ? (p.crop_data ? `
                     <div class="manuscript-image-container" style="position:relative; width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
-                        <img src="${p.image}" style="width:100%; height:100%; object-fit: cover; transition: transform 0.3s;" loading="lazy" alt="${p.title}">
-                    </div>` : ''}
+                        <img src="${p.image}" 
+                             style="position:absolute; max-width:none; transition: opacity 0.3s; opacity:0;" 
+                             onload="
+                                this.style.opacity = 1;
+                                const container = this.parentElement;
+                                const cW = container.offsetWidth;
+                                const cH = container.offsetHeight;
+                                // 获取数据库存的裁剪数据 (自然尺寸)
+                                const cropW = ${p.crop_data.width};
+                                const cropH = ${p.crop_data.height};
+                                const cropX = ${p.crop_data.x};
+                                const cropY = ${p.crop_data.y};
+                                
+                                // 1. 计算缩放比例：确保裁剪区域能填满容器 (取最大比例，类似 object-fit: cover)
+                                const scale = Math.max(cW / cropW, cH / cropH);
+                                
+                                // 2. 应用缩放
+                                this.width = this.naturalWidth * scale;
+                                this.height = this.naturalHeight * scale;
+                                
+                                // 3. 计算位移：将裁剪区域的中心对准容器的中心
+                                // 负的 cropX * scale 是把图片拉到裁剪起点
+                                // + (容器宽 - 裁剪宽缩放后) / 2 是为了居中
+                                const left = (-cropX * scale) + (cW - cropW * scale) / 2;
+                                const top = (-cropY * scale) + (cH - cropH * scale) / 2;
+                                
+                                this.style.left = left + 'px';
+                                this.style.top = top + 'px';
+                             "
+                        >
+                    </div>` 
+                    : 
+                    // 如果没有裁剪数据，显示完整图片 (Cover模式)
+                    `<div class="manuscript-image-container" style="width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
+                        <img src="${p.image}" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    </div>`
+                ) : ''}
                 
                 <p class="manuscript-excerpt">${highlightText(p.content?.substring(0, 150), state.searchQuery)}...</p>
                 <div class="manuscript-footer"><span>👁 ${p.view_count||0}</span></div>
@@ -53,11 +89,20 @@ export async function renderHome(APP, state) {
         ${renderFooter()}
       `;
       document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
+      
+      // 窗口大小改变时，重新触发计算 (防止拉伸窗口出现白边)
+      window.addEventListener('resize', () => {
+          document.querySelectorAll('.manuscript-image-container img[onload]').forEach(img => {
+              // 重新触发 onload 逻辑
+              const event = new Event('load');
+              img.dispatchEvent(event);
+          });
+      });
   };
   renderList();
 }
 
-// --- Post ---
+// --- 2. 文章详情 (Post) ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">Lost scroll...</div>'; return; }
@@ -73,12 +118,29 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const likes = post.likes || 0;
   const isLiked = localStorage.getItem(`liked_${id}`);
 
-  // 详情页大图也采用 Cover 模式，保证美观
+  // 详情页大图：通常详情页我们希望看到清晰的图，如果裁剪过，我们也可以应用裁剪
+  // 但为了视觉冲击力，详情页通常使用 Cover 模式填满宽度
   let imageHTML = '';
   if (post.image) {
-      imageHTML = `<div class="single-image-container" style="width:100%; height:auto; max-height:500px; overflow:hidden; border-radius:8px; margin-bottom:30px;">
-        <img src="${post.image}" class="single-image" style="width:100%; height:100%; object-fit:cover;">
-      </div>`;
+      // 详情页也使用智能裁剪逻辑，但高度设为自适应或固定
+      if (post.crop_data) {
+          imageHTML = `
+            <div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;">
+                <img src="${post.image}" 
+                     style="position:absolute; max-width:none;"
+                     onload="
+                        const cW = this.parentElement.offsetWidth;
+                        const cH = this.parentElement.offsetHeight;
+                        const scale = Math.max(cW / ${post.crop_data.width}, cH / ${post.crop_data.height});
+                        this.width = this.naturalWidth * scale;
+                        this.height = this.naturalHeight * scale;
+                        this.style.left = ((-${post.crop_data.x} * scale) + (cW - ${post.crop_data.width} * scale) / 2) + 'px';
+                        this.style.top = ((-${post.crop_data.y} * scale) + (cH - ${post.crop_data.height} * scale) / 2) + 'px';
+                     ">
+            </div>`;
+      } else {
+          imageHTML = `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};"></div>`;
+      }
   }
 
   APP.innerHTML = `
@@ -169,7 +231,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- Editor ---
+// --- Editor (Keep logic here) ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain', icon: '' };
     if(id) post = await postsService.getPostById(id);
@@ -272,12 +334,14 @@ export async function renderEditor(APP, id, router) {
     };
 
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
-        // 保存关键数据用于列表展示
+        // Save NATURAL dimensions of the crop box
+        const sX = els.img.naturalWidth / els.img.width;
+        const sY = els.img.naturalHeight / els.img.height;
         cropData = { 
-            containerW: els.img.width, 
-            containerH: els.img.height, 
-            left: -(parseFloat(els.box.style.left)||0), 
-            top: -(parseFloat(els.box.style.top)||0) 
+            width: Math.round(parseFloat(els.box.style.width) * sX), 
+            height: Math.round(parseFloat(els.box.style.height) * sY),
+            x: Math.round(parseFloat(els.box.style.left) * sX),
+            y: Math.round(parseFloat(els.box.style.top) * sY)
         };
         UI.showToast('Crop Applied!', 'success'); els.container.classList.add('hidden');
     });
