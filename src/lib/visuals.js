@@ -26,107 +26,88 @@ export function injectGlobalStyles() {
     #crop-box { position: absolute; border: 2px dashed #fff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); display: none; pointer-events: none; z-index: 10; }
     .crop-controls { display: flex; gap: 10px; margin-top: 15px; }
 
-    /* --- 代码高亮增强 (Copy Button) --- */
-    .code-wrapper { position: relative; margin: 1.5em 0; }
-    .copy-btn {
-        position: absolute; top: 5px; right: 5px;
-        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-        color: #ddd; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px;
-        cursor: pointer; transition: all 0.2s; opacity: 0;
+    /* --- >>> 核心修复：代码编辑器样式 <<< --- */
+    .editor-textarea {
+        background-color: #1e1e1e !important; /* VS Code 深色背景 */
+        color: #d4d4d4 !important; /* 浅灰文字 */
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important; /* 强制等宽字体 */
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        padding: 20px !important;
+        border: 2px solid var(--gold) !important;
+        border-radius: 6px;
+        
+        /* >>> 关键：禁止自动换行，解决粘贴乱的问题 <<< */
+        white-space: pre !important; 
+        overflow-x: auto !important; /* 允许横向滚动 */
+        overflow-y: auto !important;
+        word-wrap: normal !important;
+        
+        tab-size: 4; /* Tab 宽度设为 4 个空格 */
+        min-height: 500px; /* 增加高度 */
     }
+    
+    .editor-textarea:focus {
+        outline: none;
+        border-color: var(--burgundy) !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    }
+
+    /* --- 代码高亮显示样式 --- */
+    .code-wrapper { position: relative; margin: 1.5em 0; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: left !important; }
+    pre {
+        background: #272822 !important; 
+        color: #f8f8f2 !important;
+        padding: 1.2rem !important;
+        margin: 0 !important;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Consolas', 'Monaco', monospace !important;
+        line-height: 1.5;
+        text-align: left !important;
+        white-space: pre !important;
+    }
+    .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 0.75rem; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; opacity: 0; z-index: 100; backdrop-filter: blur(2px); }
     .code-wrapper:hover .copy-btn { opacity: 1; }
-    .copy-btn:hover { background: rgba(255,255,255,0.3); color: #fff; }
-    /* Prism 覆盖样式，使其适应你的极简主题 */
-    code[class*="language-"], pre[class*="language-"] { font-family: 'Fira Code', 'Consolas', monospace !important; font-size: 0.95rem !important; }
+    .copy-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-1px); }
   `;
   document.head.appendChild(style);
 }
 
-// --- 动态加载 Prism.js ---
+// ... (其余函数保持不变，确保完整复制) ...
 export function loadPrism() {
-    if (window.Prism) return; // 避免重复加载
-
-    // 1. 加载 CSS (选择 Tomorrow Night 主题，适合暗色/复古风)
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css';
-    document.head.appendChild(link);
-
-    // 2. 加载 JS
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
-    script.onload = () => {
-        // 加载常用语言包
-        const autoloader = document.createElement('script');
-        autoloader.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js';
-        document.body.appendChild(autoloader);
-    };
+    if (window.Prism) return;
+    const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css'; document.head.appendChild(link);
+    const script = document.createElement('script'); script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
+    script.onload = () => { const a = document.createElement('script'); a.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js'; document.body.appendChild(a); };
     document.body.appendChild(script);
 }
 
-// --- 触发高亮 + 注入复制按钮 ---
 export function highlightCode() {
-    // 等待 Prism 加载完成
     const interval = setInterval(() => {
-        if (window.Prism) {
-            clearInterval(interval);
-            
-            // 1. 执行高亮
-            window.Prism.highlightAll();
-
-            // 2. 注入复制按钮
-            document.querySelectorAll('pre').forEach(pre => {
-                // 防止重复注入
-                if (pre.parentElement.classList.contains('code-wrapper')) return;
-
-                // 包裹一层 wrapper 以便定位按钮
-                const wrapper = document.createElement('div');
-                wrapper.className = 'code-wrapper';
-                pre.parentNode.insertBefore(wrapper, pre);
-                wrapper.appendChild(pre);
-
-                // 创建按钮
-                const btn = document.createElement('button');
-                btn.className = 'copy-btn';
-                btn.textContent = 'Copy';
-                
-                btn.addEventListener('click', () => {
-                    const code = pre.querySelector('code').innerText;
-                    navigator.clipboard.writeText(code).then(() => {
-                        btn.textContent = 'Copied!';
-                        setTimeout(() => btn.textContent = 'Copy', 2000);
-                    });
-                });
-
-                wrapper.appendChild(btn);
-            });
-        }
-    }, 100); // 每100ms检查一次
-    
-    // 超时清除 (5秒)
+        document.querySelectorAll('pre').forEach(pre => {
+            if (pre.parentElement.classList.contains('code-wrapper')) return;
+            const wrapper = document.createElement('div'); wrapper.className = 'code-wrapper';
+            pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
+            const btn = document.createElement('button'); btn.className = 'copy-btn'; btn.textContent = 'Copy Code';
+            btn.addEventListener('click', () => { navigator.clipboard.writeText(pre.innerText).then(() => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Code', 2000); }); });
+            wrapper.appendChild(btn);
+        });
+        if (window.Prism) { window.Prism.highlightAll(); clearInterval(interval); }
+    }, 200); 
     setTimeout(() => clearInterval(interval), 5000);
 }
 
-// ... (以下代码保持不变：isSnowSeason, initSnowEffect, updateClock, updateProgressBar, updatePageMeta) ...
-
 function isSnowSeason() {
-    const now = new Date();
-    const month = now.getMonth() + 1; 
-    const day = now.getDate();
-    if (month === 12) return true;
-    if (month === 1) return true;
-    if (month === 2 && day <= 10) return true;
-    return false;
+    const now = new Date(); const m = now.getMonth() + 1; const d = now.getDate();
+    return (m === 12 || m === 1 || (m === 2 && d <= 10));
 }
 
 export function initSnowEffect() {
     if (!isSnowSeason()) return;
     const observer = new MutationObserver(() => {
-        const heroSection = document.querySelector('.hero');
-        if (heroSection && !heroSection.dataset.snowing) {
-            heroSection.dataset.snowing = "true";
-            startSnowing(heroSection);
-        }
+        const hero = document.querySelector('.hero');
+        if (hero && !hero.dataset.snowing) { hero.dataset.snowing = "true"; startSnowing(hero); }
     });
     observer.observe(document.body, { childList: true, subtree: true });
 }
@@ -135,60 +116,37 @@ function startSnowing(container) {
     if (window.snowInterval) clearInterval(window.snowInterval);
     window.snowInterval = setInterval(() => {
         if (!document.contains(container)) return;
-        const snowflake = document.createElement('div');
-        snowflake.classList.add('snowflake');
-        const size = Math.random() * 4 + 2 + 'px';
-        snowflake.style.width = size;
-        snowflake.style.height = size;
-        snowflake.style.left = Math.random() * 100 + '%';
-        const duration = Math.random() * 5 + 5 + 's';
-        snowflake.style.animation = `snowfall ${duration} linear forwards`;
-        snowflake.style.opacity = Math.random() * 0.5 + 0.3;
-        container.appendChild(snowflake);
-        setTimeout(() => snowflake.remove(), 10000); 
+        const s = document.createElement('div'); s.className = 'snowflake';
+        const size = Math.random() * 4 + 2 + 'px'; s.style.width = size; s.style.height = size; s.style.left = Math.random() * 100 + '%';
+        s.style.animation = `snowfall ${Math.random() * 5 + 5 + 's'} linear forwards`; s.style.opacity = Math.random() * 0.5 + 0.3;
+        container.appendChild(s); setTimeout(() => s.remove(), 10000); 
     }, 300);
-}
-
-export function updateClock() {
-  const clockDisplay = document.getElementById('clock-display');
-  if (!clockDisplay) return;
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-  let lunarStr = '';
-  try {
-    lunarStr = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(now);
-    lunarStr = lunarStr.replace(/^\d+/, ''); 
-  } catch (e) { console.warn('Lunar calendar not supported'); }
-  clockDisplay.innerHTML = `<div style="font-size: 1rem; font-weight: 600;">${timeStr}</div><div style="font-size: 0.85rem; opacity: 0.8;">${dateStr}</div>${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', 'STKaiti', serif;">农历 ${lunarStr}</div>` : ''}`;
 }
 
 function ensureProgressBar() {
     let bar = document.getElementById('reading-progress');
-    if (!bar) {
-        bar = document.createElement('div');
-        bar.id = 'reading-progress';
-        document.body.appendChild(bar); 
-    }
+    if (!bar) { bar = document.createElement('div'); bar.id = 'reading-progress'; document.body.appendChild(bar); }
     return bar;
 }
 
 export function updateProgressBar() {
-    if (!window.location.pathname.startsWith('/post/')) {
-        const bar = document.getElementById('reading-progress');
-        if (bar) bar.style.width = '0%';
-        return;
-    }
-    const progressBar = ensureProgressBar();
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-    progressBar.style.width = scrollPercent + '%';
+    if (!window.location.pathname.startsWith('/post/')) { const b = document.getElementById('reading-progress'); if(b) b.style.width = '0%'; return; }
+    const bar = ensureProgressBar();
+    const st = window.scrollY || document.documentElement.scrollTop;
+    const dh = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (dh > 0 ? (st / dh) * 100 : 0) + '%';
+}
+
+export function updateClock() {
+  const d = document.getElementById('clock-display'); if (!d) return;
+  const n = new Date();
+  let l = ''; try { l = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(n).replace(/^\d+/, ''); } catch (e) {}
+  d.innerHTML = `<div style="font-size: 1rem; font-weight: 600;">${n.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div style="font-size: 0.85rem; opacity: 0.8;">${n.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>${l?`<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${l}</div>`:''}`;
 }
 
 export function updatePageMeta(post) {
   document.title = `${post.title} - Minimalist`;
-  let metaDesc = document.querySelector('meta[name="description"]');
-  if (!metaDesc) { metaDesc = document.createElement('meta'); metaDesc.name = 'description'; document.head.appendChild(metaDesc); }
-  metaDesc.content = post.content?.substring(0, 160) || 'Read this post on Minimalist blog';
+  let m = document.querySelector('meta[name="description"]');
+  if (!m) { m = document.createElement('meta'); m.name = 'description'; document.head.appendChild(m); }
+  m.content = post.content?.substring(0, 160) || 'Read this post on Minimalist blog';
 }
