@@ -4,7 +4,7 @@ import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 
-// --- 首页渲染 ---
+// --- 首页渲染 (保持不变) ---
 export async function renderHome(APP, state, router) {
   state.posts = await postsService.getAllPosts();
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
@@ -26,25 +26,12 @@ export async function renderHome(APP, state, router) {
     <div class="manuscripts" id="manuscripts"></div>
   `;
 
-  // 热门文章
   const popularPosts = await postsService.getPopularPosts(5);
   if (popularPosts.length > 0) {
     document.getElementById('popular-posts-container').innerHTML = `
-      <div class="popular-posts-section">
-        <h2 class="section-title">🔥 Most Popular</h2>
-        <div class="popular-posts-list">
-          ${popularPosts.map((p, index) => `
-            <div class="popular-post-item" data-post-id="${p.id}">
-              <span class="popular-rank">#${index + 1}</span>
-              <div class="popular-post-info"><h4>${p.title}</h4><p class="popular-post-meta">${p.view_count || 0} views • ${p.category || 'Uncategorized'}</p></div>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `;
+      <div class="popular-posts-section"><h2 class="section-title">🔥 Most Popular</h2><div class="popular-posts-list">${popularPosts.map((p, index) => `<div class="popular-post-item" data-post-id="${p.id}"><span class="popular-rank">#${index + 1}</span><div class="popular-post-info"><h4>${p.title}</h4><p class="popular-post-meta">${p.view_count || 0} views • ${p.category || 'Uncategorized'}</p></div></div>`).join('')}</div></div>`;
   }
   
-  // 渲染文章列表逻辑
   const renderList = () => {
       let filtered = state.posts;
       if (state.searchQuery) filtered = filtered.filter(p => p.title?.toLowerCase().includes(state.searchQuery) || p.content?.toLowerCase().includes(state.searchQuery));
@@ -58,7 +45,21 @@ export async function renderHome(APP, state, router) {
         <div class="manuscript" data-post-id="${p.id}">
           <div class="manuscript-header"><h2 class="manuscript-title">${p.title}</h2><div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div></div>
           <div class="manuscript-meta"><span>✎ ${p.category || 'Uncategorized'}</span></div>
-          ${p.image ? `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">` : ''}
+          ${p.image ? (p.crop_data ? `
+            <div class="manuscript-image-container" style="width: 100%; margin: 15px 0;">
+              <div style="position: relative; width: 100%; height: 300px; overflow: hidden; border: 4px solid var(--gold); box-shadow: inset 0 0 20px var(--shadow);">
+                <img src="${p.image}" style="position: absolute; width: auto; height: auto; max-width: none; filter: sepia(0.2);"
+                     onload="(function(img){
+                        const container = img.parentElement;
+                        const cropW = ${p.crop_data.width}, cropH = ${p.crop_data.height}, cropX = ${p.crop_data.x}, cropY = ${p.crop_data.y};
+                        const scale = Math.max(container.offsetWidth / cropW, container.offsetHeight / cropH);
+                        img.style.width = (img.naturalWidth * scale) + 'px';
+                        img.style.height = (img.naturalHeight * scale) + 'px';
+                        img.style.left = ((-cropX * scale) + (container.offsetWidth - cropW * scale) / 2) + 'px';
+                        img.style.top = ((-cropY * scale) + (container.offsetHeight - cropH * scale) / 2) + 'px';
+                     })(this)" loading="lazy">
+              </div>
+            </div>` : `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">`) : ''}
           <p class="manuscript-excerpt">${p.content?.substring(0, 150) || ''}...</p>
           <div class="manuscript-footer"><div class="manuscript-tags">${(p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div><span>👁 ${p.view_count||0}</span></div>
         </div>
@@ -66,7 +67,6 @@ export async function renderHome(APP, state, router) {
   };
   renderList();
 
-  // 事件绑定
   document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
   document.querySelectorAll('.wax-seal').forEach(seal => seal.addEventListener('click', e => {
       document.querySelectorAll('.wax-seal').forEach(s => s.classList.remove('active')); e.target.classList.add('active');
@@ -78,12 +78,11 @@ export async function renderHome(APP, state, router) {
   }));
 }
 
-// --- 文章详情页渲染 ---
+// --- 文章详情页渲染 (保持不变) ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
 
-  // 增加阅读量 & 防刷
   try {
       const key = `has_viewed_post_${id}`;
       if (!sessionStorage.getItem(key)) {
@@ -94,7 +93,6 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       }
   } catch (e) { console.error(e); }
 
-  // 上一篇/下一篇逻辑
   const all = await postsService.getAllPosts();
   const pubs = all.filter(p => !p.is_draft);
   const idx = pubs.findIndex(p => p.id === id);
@@ -116,7 +114,21 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
         <div>Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count} views</div>
         <div style="font-size:1rem;color:var(--gold);margin-top:5px;">📚 预计阅读 ${readTime} 分钟</div>
       </div>
-      ${post.image ? `<div class="single-image-container"><img src="${post.image}" class="single-image" style="width:100%;object-fit:${post.image_fit||'contain'};"></div>` : ''}
+      ${post.image ? (post.crop_data ? `
+        <div class="single-image-container" style="width: 100%; max-width: 800px; margin: 40px auto; display: block;">
+          <div style="position: relative; width: 100%; padding-bottom: ${(post.crop_data.height / post.crop_data.width * 100)}%; overflow: hidden; border: 6px solid var(--gold); box-shadow: 0 8px 24px var(--shadow);">
+            <img src="${post.image}" style="position: absolute; left: ${-(post.crop_data.x / post.crop_data.width * 100)}%; top: ${-(post.crop_data.y / post.crop_data.height * 100)}%; width: auto; height: auto; max-width: none; filter: sepia(0.15);"
+                 onload="(function(img){
+                    const container = img.parentElement;
+                    const cropW = ${post.crop_data.width}, cropH = ${post.crop_data.height}, cropX = ${post.crop_data.x}, cropY = ${post.crop_data.y};
+                    const scale = container.offsetWidth / cropW;
+                    img.style.width = (img.naturalWidth * scale) + 'px';
+                    img.style.height = (img.naturalHeight * scale) + 'px';
+                    img.style.left = (-cropX * scale) + 'px';
+                    img.style.top = (-cropY * scale) + 'px';
+                 })(this)" alt="${post.title}">
+          </div>
+        </div>` : `<img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};" alt="${post.title}">`) : ''}
       <div class="article-with-toc"><div id="toc-container"></div><article class="article-content" id="article-content">${content}</article></div>
     </div>
     <div class="post-navigation">
@@ -129,34 +141,58 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     </div>
   `;
 
-  // TOC
   const headings = generateTOC(post.content);
   if (headings.length > 0) {
       document.getElementById('toc-container').innerHTML = renderTOC(headings);
       document.getElementById('article-content').innerHTML = injectHeadingIds(content);
-      // TOC点击滚动
       document.querySelectorAll('.toc-link').forEach(l => l.addEventListener('click', e => {
           e.preventDefault(); 
           document.getElementById(l.getAttribute('href').substring(1))?.scrollIntoView({behavior:'smooth'});
       }));
   }
 
-  // 评论渲染
+  window.addEventListener('scroll', () => {
+    const progressBar = document.getElementById('reading-progress');
+    if (progressBar) {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = (scrollTop / docHeight) * 100;
+        progressBar.style.width = scrollPercent + '%';
+    }
+    if (headings.length > 0) {
+        const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id]');
+        const tocLinks = document.querySelectorAll('.toc-link');
+        let activeIndex = 0;
+        headingElements.forEach((heading, index) => { if (heading.getBoundingClientRect().top <= 100) activeIndex = index; });
+        tocLinks.forEach((link, index) => { index === activeIndex ? link.classList.add('active') : link.classList.remove('active'); });
+    }
+  });
+
+  const relatedPosts = await postsService.getRelatedPosts(id, post.tags, 3);
+  if (relatedPosts.length > 0) {
+    const relatedSection = document.createElement('div');
+    relatedSection.className = 'related-posts-section';
+    relatedSection.innerHTML = `<div class="divider">✦ Related Articles ✦</div><div class="related-posts-grid">${relatedPosts.map(p => `<div class="related-post-card" data-post-id="${p.id}">${p.image ? `<div class="related-post-image" style="background-image: url('${p.image}');"></div>` : ''}<div class="related-post-content"><h4>${p.title}</h4><p class="related-post-meta">${p.view_count || 0} views</p></div></div>`).join('')}</div>`;
+    const commentsSection = document.getElementById('comments-section');
+    commentsSection.parentNode.insertBefore(relatedSection, commentsSection);
+  }
+
   renderCommentsList(comments);
-  document.getElementById('comment-form').addEventListener('submit', async e => {
+  if (document.getElementById('comment-form')) {
+    document.getElementById('comment-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-          await commentsService.createComment(id, document.getElementById('cn').value, document.getElementById('ce').value, document.getElementById('cc').value);
-          router.route(); // Reload
-      } catch(err) { alert(err.message); }
-  });
+        await commentsService.createComment(id, document.getElementById('cn').value, document.getElementById('ce').value, document.getElementById('cc').value);
+        router.route();
+      } catch (error) { alert('Failed to post comment: ' + error.message); }
+    });
+  }
 }
 
 function renderCommentsList(comments) {
     const list = document.getElementById('comments-list');
     if(!comments.length) { list.innerHTML = '<p style="text-align:center;padding:40px;color:var(--sepia);">No comments yet.</p>'; return; }
     
-    // 简单递归渲染
     const renderTree = (c, d=0) => `
         <div style="margin-left:${d*40}px;margin-bottom:20px;" class="comment-item">
             <div class="manuscript" style="padding:20px;">
@@ -170,12 +206,10 @@ function renderCommentsList(comments) {
     
     list.innerHTML = comments.map(c => renderTree(c)).join('');
     
-    // 绑定回复按钮
     document.querySelectorAll('.btn-reply').forEach(b => b.addEventListener('click', e => {
         const f = document.getElementById(`reply-${e.target.dataset.cid}`);
         f.style.display = f.style.display === 'none' ? 'block' : 'none';
     }));
-    // 绑定回复提交
     document.querySelectorAll('.reply-form').forEach(f => f.addEventListener('submit', async e => {
         e.preventDefault();
         try {
@@ -185,7 +219,7 @@ function renderCommentsList(comments) {
     }));
 }
 
-// --- 后台/登录/编辑 简单封装 ---
+// --- 简单封装 (Login & Admin) ---
 export function renderLogin(APP, router) {
     APP.innerHTML = `<div class="form-container"><h2 class="form-title">Login</h2><form id="login-form"><input type="email" id="le" placeholder="Email" required><input type="password" id="lp" placeholder="Password" required><button type="submit" class="btn-primary" style="width:100%;margin-top:20px;">Sign In</button></form></div>`;
     document.getElementById('login-form').addEventListener('submit', async e => {
@@ -205,13 +239,86 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
+// --- >>> 重点修改：恢复了完整的图片裁剪逻辑的 RenderEditor <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
-    APP.innerHTML = `<div class="form-container"><h2>${id?'Edit':'New'} Post</h2><form id="post-form"><div class="form-group"><label>Title</label><input id="pt" value="${post.title}" required></div><div class="form-group"><label>Image</label><input id="pi" value="${post.image||''}"></div><div class="form-group"><label>Content</label><textarea id="pc" style="min-height:300px;" required>${post.content||''}</textarea></div><div class="form-group"><label>Category</label><input id="pcat" value="${post.category}"></div><div class="form-group"><label>Tags</label><input id="ptags" value="${(post.tags||[]).join(',')}"></div><button type="submit" class="btn-primary">Save</button> <button type="button" id="draft-btn" class="btn-secondary">Save Draft</button></form></div>`;
     
+    APP.innerHTML = `
+      <div class="form-container">
+        <div class="admin-header"><h2 class="admin-title">${id?'Revise':'New'} Post</h2><button class="btn-secondary" data-link="/admin">Cancel</button></div>
+        <form id="post-form">
+          <div class="form-group"><label>Title</label><input id="pt" value="${post.title}" required></div>
+          <div class="form-group">
+            <label>Image URL</label>
+            <input id="pi" value="${post.image||''}">
+            <button type="button" class="btn-secondary" id="crop-image-btn" style="margin-top:10px;">裁剪图片</button>
+          </div>
+          <div id="crop-container" class="image-crop-container hidden">
+            <div style="padding:10px;background:#fff3cd;border:1px solid var(--gold);margin-bottom:15px;"><strong>📝 说明：</strong>在图片上按住鼠标拖动来框选区域</div>
+            <div id="crop-wrapper"><img id="crop-image"><div id="crop-box"></div></div>
+            <div class="crop-controls">
+              <button type="button" class="btn-primary" id="apply-crop-btn">✓ 应用</button>
+              <button type="button" class="btn-secondary" id="reset-crop-btn">↻ 重置</button>
+              <button type="button" class="btn-secondary" id="cancel-crop-btn">✕ 取消</button>
+            </div>
+          </div>
+          <div class="form-group"><label>Fit</label><select id="pfit"><option value="contain" ${post.image_fit==='contain'?'selected':''}>Full</option><option value="cover" ${post.image_fit==='cover'?'selected':''}>Cropped</option></select></div>
+          <div class="form-group"><label>Content</label><textarea id="pc" style="min-height:300px;" required>${post.content||''}</textarea></div>
+          <div class="form-group"><label>Category</label><input id="pcat" value="${post.category}"></div>
+          <div class="form-group"><label>Tags</label><input id="ptags" value="${(post.tags||[]).join(',')}"></div>
+          <button type="submit" class="btn-primary">Save</button> <button type="button" id="draft-btn" class="btn-secondary">Draft</button>
+        </form>
+      </div>`;
+    
+    // 裁剪逻辑变量
+    let cropData = post.crop_data || null; 
+    let isDrawing = false, hasSelection = false, startX = 0, startY = 0;
+    const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
+    
+    // 加载图片
+    els.btn.addEventListener('click', () => { 
+        const url = document.getElementById('pi').value; 
+        if(!url) return alert('Input URL first'); 
+        els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display = 'none'; hasSelection = false; 
+        els.img.onload = () => { 
+            if(cropData) { 
+                const scaleX = els.img.width/cropData.width, scaleY = els.img.height/cropData.height; 
+                els.box.style.left = (cropData.x*scaleX)+'px'; els.box.style.top = (cropData.y*scaleY)+'px'; els.box.style.width = (cropData.width*scaleX)+'px'; els.box.style.height = (cropData.height*scaleY)+'px'; els.box.style.display = 'block'; hasSelection = true; 
+            } 
+        }; 
+    });
+
+    // 鼠标画框事件
+    els.wrapper.onmousedown = (e) => { 
+        if(hasSelection) return; e.preventDefault(); isDrawing = true; 
+        const rect = els.img.getBoundingClientRect(); 
+        startX = e.clientX - rect.left; startY = e.clientY - rect.top; 
+        els.box.style.left = startX+'px'; els.box.style.top = startY+'px'; els.box.style.width = '0px'; els.box.style.height = '0px'; els.box.style.display = 'block'; 
+    };
+    els.wrapper.onmousemove = (e) => { 
+        if(!isDrawing) return; e.preventDefault(); 
+        const rect = els.img.getBoundingClientRect(); 
+        const curX = Math.max(0, Math.min(e.clientX - rect.left, els.img.width)); 
+        const curY = Math.max(0, Math.min(e.clientY - rect.top, els.img.height)); 
+        els.box.style.width = Math.abs(curX - startX)+'px'; els.box.style.height = Math.abs(curY - startY)+'px'; 
+        els.box.style.left = (curX > startX ? startX : curX)+'px'; els.box.style.top = (curY > startY ? startY : curY)+'px'; 
+    };
+    els.wrapper.onmouseup = () => { isDrawing = false; if(parseFloat(els.box.style.width)>10) hasSelection = true; else els.box.style.display = 'none'; };
+    
+    // 按钮事件
+    document.getElementById('apply-crop-btn').addEventListener('click', () => { 
+        if(!hasSelection) return alert('Please select area'); 
+        const scaleX = els.img.naturalWidth / els.img.width;
+        cropData = { x: Math.round(parseFloat(els.box.style.left)*scaleX), y: Math.round(parseFloat(els.box.style.top)*scaleX), width: Math.round(parseFloat(els.box.style.width)*scaleX), height: Math.round(parseFloat(els.box.style.height)*scaleX) };
+        alert('Crop Saved!'); els.container.classList.add('hidden');
+    });
+    document.getElementById('reset-crop-btn').addEventListener('click', () => { els.box.style.display='none'; cropData=null; hasSelection=false; });
+    document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
+
+    // 保存逻辑
     const save = async (draft) => {
-        const data = { title: document.getElementById('pt').value, content: document.getElementById('pc').value, image: document.getElementById('pi').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), is_draft: draft };
+        const data = { title: document.getElementById('pt').value, content: document.getElementById('pc').value, image: document.getElementById('pi').value, image_fit: document.getElementById('pfit').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), crop_data: cropData, is_draft: draft };
         if(id) await postsService.updatePost(id, data); else await postsService.createPost(data);
         router.navigate('/admin');
     };
