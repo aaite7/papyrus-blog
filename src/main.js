@@ -4,8 +4,6 @@ import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
 import * as Views from './lib/views.js';
 
-// 即使 visuals.js 存在，我们也不用它，只用上面的新模块
-
 const APP = document.getElementById('app');
 const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
 
@@ -27,7 +25,7 @@ const router = {
     const path = window.location.pathname;
     
     // 渲染骨架屏
-    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
+    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : '<div class="loading">Loading...</div>';
     window.scrollTo(0, 0);
     
     try {
@@ -62,7 +60,7 @@ function updateAuthUI() {
   }
 
   if (window.clockInterval) clearInterval(window.clockInterval);
-  if (UI.updateClock) {
+  if(UI.updateClock) {
       UI.updateClock();
       window.clockInterval = setInterval(UI.updateClock, 1000);
   }
@@ -85,6 +83,7 @@ function initShortcuts() {
         }
         if (e.key.toLowerCase() === 'j') window.scrollBy({ top: 300, behavior: 'smooth' });
         if (e.key.toLowerCase() === 'k') window.scrollBy({ top: -300, behavior: 'smooth' });
+        if (e.key === 'Escape') document.querySelector('.lightbox-overlay.active')?.classList.remove('active');
     });
 }
 
