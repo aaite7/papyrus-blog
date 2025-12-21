@@ -1,19 +1,19 @@
 import { supabase } from './supabase.js';
 
-export const postsService = {
-  async getAllPosts() {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .order('is_pinned', { ascending: false })
-      .order('pinned_at', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
-  },
 
-  async getPopularPosts(limit = 5) {
+  async const fixPost = (post) => {
+  if (!post) return null;
+  const newPost = { ...post };
+  if (typeof newPost.tags === 'string') {
+    newPost.tags = newPost.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+  } else if (!Array.isArray(newPost.tags)) {
+    newPost.tags = [];
+  }
+  return newPost;
+};
+
+getPopularPosts(limit = 5) {
     const { data, error } = await supabase
       .from('posts')
       .select('*')
