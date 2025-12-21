@@ -6,6 +6,49 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
+const prepareTagsForSave = (tags: any): string[] => {
+    if (!tags) {
+        return [];
+    }
+
+    let processedTags: any[] = [];
+
+    if (!Array.isArray(tags)) {
+        processedTags = [tags];
+    } else {
+        processedTags = tags;
+    }
+    
+    const flattenAndParse = (arr: any[]): any[] => {
+        let result: any[] = [];
+        for (const item of arr) {
+            if (Array.isArray(item)) {
+                result.push(...flattenAndParse(item));
+            } else if (typeof item === 'string') {
+                try {
+                    const parsed = JSON.parse(item);
+                    if (Array.isArray(parsed)) {
+                        result.push(...flattenAndParse(parsed));
+                    } else {
+                        result.push(parsed);
+                    }
+                } catch (e) {
+                    result.push(item);
+                }
+            } else {
+                result.push(item);
+            }
+        }
+        return result;
+    };
+
+    const finalTags = flattenAndParse(processedTags);
+
+    return finalTags
+        .map(String)
+        .filter(tag => tag && tag.trim() !== '');
+};
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -164,6 +207,8 @@ Deno.serve(async (req: Request) => {
         excerpt = postData.content.substring(0, 150).replace(/\s+/g, ' ').trim() + '...';
       }
 
+      const tagsToSave = prepareTagsForSave(postData.tags);
+
       const { data, error } = await supabase
         .from('posts')
         .insert({
@@ -173,7 +218,7 @@ Deno.serve(async (req: Request) => {
           content: postData.content || '',
           author: postData.author || 'Admin',
           category: postData.category || 'Thoughts',
-          tags: postData.tags || [],
+          tags: tagsToSave,
           mood: postData.mood || 'neutral',
           is_pinned: postData.isPinned || false,
           published: postData.published !== false,
@@ -205,7 +250,7 @@ Deno.serve(async (req: Request) => {
       if (postData.content !== undefined) updateData.content = postData.content;
       if (postData.author !== undefined) updateData.author = postData.author;
       if (postData.category !== undefined) updateData.category = postData.category;
-      if (postData.tags !== undefined) updateData.tags = postData.tags;
+      if (postData.tags !== undefined) updateData.tags = prepareTagsForSave(postData.tags);
       if (postData.mood !== undefined) updateData.mood = postData.mood;
       if (postData.isPinned !== undefined) updateData.is_pinned = postData.isPinned;
       if (postData.published !== undefined) updateData.published = postData.published;
