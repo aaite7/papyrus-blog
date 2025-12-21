@@ -4,7 +4,7 @@ import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 
-// --- 首页渲染 ---
+// --- 首页渲染 (保持不变) ---
 export async function renderHome(APP, state, router) {
   state.posts = await postsService.getAllPosts();
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
@@ -78,7 +78,7 @@ export async function renderHome(APP, state, router) {
   }));
 }
 
-// --- 文章详情页渲染 ---
+// --- 文章详情页渲染 (保持不变) ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
@@ -135,19 +135,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       ${prev ? `<a href="#" class="nav-post nav-prev" data-link="/post/${prev.id}"><span class="nav-label">← 上一篇</span><span class="nav-title">${prev.title}</span></a>` : '<div></div>'}
       ${next ? `<a href="#" class="nav-post nav-next" data-link="/post/${next.id}"><span class="nav-label">下一篇 →</span><span class="nav-title">${next.title}</span></a>` : '<div></div>'}
     </div>
-    
     <div id="comments-section"><div class="divider">✦ Comments (${comments.length}) ✦</div>
-      <div class="form-container"><h3 class="form-title" style="font-size:1.5rem">Leave a Comment</h3>
-        <form id="comment-form">
-          <div class="form-group"><label>Name</label><input type="text" id="cn" required></div>
-          <div class="form-group"><label>Email</label><input type="email" id="ce" required></div>
-          <div class="form-group">
-            <label>Comment</label>
-            <textarea id="cc" rows="4" style="min-height: 120px;" required></textarea>
-          </div>
-          <button type="submit" class="btn-primary">Post</button>
-        </form>
-      </div>
+      <div class="form-container"><h3 class="form-title" style="font-size:1.5rem">Leave a Comment</h3><form id="comment-form"><div class="form-group"><label>Name</label><input type="text" id="cn" required></div><div class="form-group"><label>Email</label><input type="email" id="ce" required></div><div class="form-group"><label>Comment</label><textarea id="cc" rows="4" style="min-height: 120px;" required></textarea></div><button type="submit" class="btn-primary">Post</button></form></div>
       <div id="comments-list"></div>
     </div>
   `;
@@ -162,7 +151,6 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       }));
   }
 
-  // 仅保留 TOC 高亮监听，进度条逻辑已移至 main.js 全局调用
   window.addEventListener('scroll', () => {
     if (headings.length > 0) {
         const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id]');
@@ -204,14 +192,7 @@ function renderCommentsList(comments) {
                 <div style="color:var(--burgundy);font-weight:bold;">${c.author_name} <span style="font-weight:normal;color:var(--sepia);font-size:0.8em;">${new Date(c.created_at).toLocaleDateString()}</span></div>
                 <p>${c.content}</p>
                 <button class="btn-reply" data-cid="${c.id}" style="font-size:0.8em;background:none;border:1px solid var(--sepia);padding:2px 8px;cursor:pointer;">回复</button>
-                <div id="reply-${c.id}" style="display:none;margin-top:10px;">
-                    <form class="reply-form" data-pid="${c.id}">
-                        <input placeholder="Name" class="rn" required>
-                        <input placeholder="Email" class="re" required>
-                        <textarea placeholder="Reply..." class="rc" style="min-height: 80px;" required></textarea>
-                        <button type="submit">Send</button>
-                    </form>
-                </div>
+                <div id="reply-${c.id}" style="display:none;margin-top:10px;"><form class="reply-form" data-pid="${c.id}"><input placeholder="Name" class="rn" required><input placeholder="Email" class="re" required><textarea placeholder="Reply..." class="rc" style="min-height: 80px;" required></textarea><button type="submit">Send</button></form></div>
             </div>
             ${c.replies?.map(r => renderTree(r, d+1)).join('') || ''}
         </div>`;
@@ -250,7 +231,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- 包含图片裁剪修复的编辑器 ---
+// --- >>> 升级版编辑器：支持快捷键和随机图片 <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -278,13 +259,31 @@ export async function renderEditor(APP, id, router) {
             </div>
           </div>
           <div class="form-group"><label>Fit</label><select id="pfit"><option value="contain" ${post.image_fit==='contain'?'selected':''}>Full</option><option value="cover" ${post.image_fit==='cover'?'selected':''}>Cropped</option></select></div>
-          <div class="form-group"><label>Content</label><textarea id="pc" style="min-height:300px;" required>${post.content||''}</textarea></div>
+          
+          <div class="form-group">
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Content (Markdown)</span>
+                <div>
+                    <span style="font-size:0.8rem; color:#888; margin-right:10px;">快捷键: Ctrl+I 插入随机图</span>
+                    <button type="button" id="insert-img-btn" class="btn-secondary" style="padding:4px 8px; font-size:0.8rem; margin-right:5px;">🎲 Random Img</button>
+                    <button type="button" id="toggle-preview-btn" class="btn-secondary" style="padding:4px 8px; font-size:0.8rem;">Switch View</button>
+                </div>
+            </label>
+            <div class="editor-container">
+                <div class="editor-pane" id="editor-pane">
+                    <textarea id="pc" class="editor-textarea" required placeholder="Write your masterpiece here...">${post.content||''}</textarea>
+                </div>
+                <div class="preview-pane hidden" id="preview-pane"><div id="preview-content" class="article-content"></div></div>
+            </div>
+          </div>
+
           <div class="form-group"><label>Category</label><input id="pcat" value="${post.category}"></div>
           <div class="form-group"><label>Tags</label><input id="ptags" value="${(post.tags||[]).join(',')}"></div>
           <button type="submit" class="btn-primary">Save</button> <button type="button" id="draft-btn" class="btn-secondary">Draft</button>
         </form>
       </div>`;
     
+    // --- 裁剪逻辑 (保持不变) ---
     let cropData = post.crop_data || null; 
     let isDrawing = false, hasSelection = false, startX = 0, startY = 0;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
@@ -338,6 +337,55 @@ export async function renderEditor(APP, id, router) {
     
     document.getElementById('reset-crop-btn').addEventListener('click', () => { els.box.style.display='none'; cropData=null; hasSelection=false; });
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
+
+    // --- >>> 核心功能：光标处插入图片 (封装函数) <<< ---
+    const insertRandomImage = () => {
+        const textarea = document.getElementById('pc');
+        const cursor = textarea.selectionStart;
+        const text = textarea.value;
+        const seed = Date.now(); // 使用时间戳作为种子，确保每次图片不同
+        // 使用 Picsum Seed 模式，确保静态化后图片不变
+        const imgMarkdown = `\n![Random Image](https://picsum.photos/seed/${seed}/800/450)\n`;
+        
+        // 插入文本
+        const newText = text.slice(0, cursor) + imgMarkdown + text.slice(cursor);
+        textarea.value = newText;
+        
+        // 恢复焦点并移动光标
+        textarea.focus();
+        textarea.selectionEnd = cursor + imgMarkdown.length;
+    };
+
+    // 绑定按钮点击
+    document.getElementById('insert-img-btn').addEventListener('click', insertRandomImage);
+
+    // 绑定快捷键 Ctrl + I
+    const ta = document.getElementById('pc'); 
+    ta.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+            e.preventDefault(); // 阻止浏览器默认行为
+            insertRandomImage();
+        }
+    });
+
+    let mode = false;
+    let debounce;
+    document.getElementById('toggle-preview-btn').addEventListener('click', (e) => { 
+        mode = !mode; 
+        e.target.textContent = mode ? 'Edit Mode' : 'Preview Mode'; 
+        document.getElementById('editor-pane').classList.toggle('split'); 
+        document.getElementById('preview-pane').classList.toggle('hidden'); 
+        if(mode) document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value)); 
+    });
+    
+    ta.addEventListener('input', () => { 
+        if(mode) {
+            clearTimeout(debounce);
+            debounce = setTimeout(() => {
+                document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value));
+            }, 300);
+        }
+    });
 
     const save = async (draft) => {
         const data = { title: document.getElementById('pt').value, content: document.getElementById('pc').value, image: document.getElementById('pi').value, image_fit: document.getElementById('pfit').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), crop_data: cropData, is_draft: draft };
