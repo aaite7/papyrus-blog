@@ -43,8 +43,7 @@ export async function renderHome(APP, state) {
                 
                 ${p.image ? (p.crop_data ? `
                     <div class="manuscript-image-container" style="position:relative; width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
-                        <img src="${p.image}" 
-                             style="position:absolute; max-width:none; transition: opacity 0.3s; opacity:0;" 
+                        <img src="${p.image}" style="position:absolute; max-width:none; transition: opacity 0.3s; opacity:0;" 
                              onload="
                                 this.style.opacity = 1;
                                 const container = this.parentElement;
@@ -61,8 +60,7 @@ export async function renderHome(APP, state) {
                                 const top = (-cropY * scale) + (cH - cropH * scale) / 2;
                                 this.style.left = left + 'px';
                                 this.style.top = top + 'px';
-                             "
-                        >
+                             ">
                     </div>` 
                     : `<div class="manuscript-image-container" style="width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
                         <img src="${p.image}" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
@@ -80,7 +78,7 @@ export async function renderHome(APP, state) {
   renderList();
 }
 
-// --- Post ---
+// --- Post (>>> 核心修复：独立 TOC + 滚动监听 <<<) ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">Lost scroll...</div>'; return; }
@@ -99,38 +97,31 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   let imageHTML = '';
   if (post.image) {
       if (post.crop_data) {
-          imageHTML = `
-            <div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;">
-                <img src="${post.image}" 
-                     style="position:absolute; max-width:none;"
-                     onload="
-                        const cW = this.parentElement.offsetWidth;
-                        const cH = this.parentElement.offsetHeight;
-                        const scale = Math.max(cW / ${post.crop_data.width}, cH / ${post.crop_data.height});
-                        this.width = this.naturalWidth * scale;
-                        this.height = this.naturalHeight * scale;
-                        this.style.left = ((-${post.crop_data.x} * scale) + (cW - ${post.crop_data.width} * scale) / 2) + 'px';
-                        this.style.top = ((-${post.crop_data.y} * scale) + (cH - ${post.crop_data.height} * scale) / 2) + 'px';
-                     ">
-            </div>`;
+          imageHTML = `<div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;"><img src="${post.image}" style="position:absolute; max-width:none;" onload="const cW=this.parentElement.offsetWidth;const cH=this.parentElement.offsetHeight;const scale=Math.max(cW/${post.crop_data.width},cH/${post.crop_data.height});this.width=this.naturalWidth*scale;this.height=this.naturalHeight*scale;this.style.left=((- ${post.crop_data.x}*scale)+(cW-${post.crop_data.width}*scale)/2)+'px';this.style.top=((- ${post.crop_data.y}*scale)+(cH-${post.crop_data.height}*scale)/2)+'px';"></div>`;
       } else {
           imageHTML = `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};"></div>`;
       }
   }
 
   APP.innerHTML = `
+    <div id="reading-progress"></div>
+    
+    <div id="toc"></div>
+
     <div class="floating-bar">
         <div class="action-btn ${isLiked?'liked':''}" id="btn-like">♥ <span class="btn-badge" id="l-cnt">${likes}</span></div>
         <div class="action-btn" id="btn-share">🔗</div>
         <div class="action-btn" id="btn-top">⬆</div>
     </div>
+
     <div class="single-manuscript fade-in">
         ${renderIcon(post.icon, 'single-icon')}
         <h1 class="single-title">${post.title}</h1>
         <div class="single-meta">Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count||0}</div>
         ${imageHTML}
-        <div class="article-with-toc"><div id="toc"></div><article class="article-content">${content}</article></div>
+        <article class="article-content">${injectHeadingIds(content)}</article>
     </div>
+
     <div id="comments-section"><div class="divider">✦ Comments (${comments.length}) ✦</div><div id="comments-list"></div>
       <div class="form-container" style="margin-top:20px;"><form id="comment-form"><input id="cn" placeholder="Name" required><input id="ce" placeholder="Email" required><textarea id="cc" placeholder="Comment..." required></textarea><button type="submit" class="btn-primary">Post</button></form></div>
     </div>
@@ -138,14 +129,44 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   `;
 
   UI.initLightbox();
-  // 重新触发一次进度条计算，确保它知道现在在文章页
-  UI.initReadingProgress(); 
+  UI.initReadingProgress();
 
-  if (generateTOC(post.content).length > 0) { 
-      document.getElementById('toc').innerHTML = renderTOC(generateTOC(post.content)); 
-      document.getElementById('toc').querySelectorAll('a').forEach(l => l.addEventListener('click', e => { e.preventDefault(); document.getElementById(l.getAttribute('href').substring(1))?.scrollIntoView({behavior:'smooth'}); })); 
+  // >>> 生成 TOC 并启动滚动监听 <<<
+  const headingsData = generateTOC(post.content);
+  if (headingsData.length > 0) {
+      document.getElementById('toc').innerHTML = renderTOC(headingsData);
+      
+      // 平滑滚动
+      document.getElementById('toc').querySelectorAll('a').forEach(l => l.addEventListener('click', e => { 
+          e.preventDefault(); 
+          const targetId = l.getAttribute('href').substring(1);
+          document.getElementById(targetId)?.scrollIntoView({behavior:'smooth'}); 
+      }));
+
+      // 滚动监听 (Scroll Spy)
+      const headingElements = document.querySelectorAll('.article-content h1[id], .article-content h2[id], .article-content h3[id]');
+      const tocLinks = document.querySelectorAll('#toc a');
+      
+      const onScroll = () => {
+          let current = '';
+          headingElements.forEach(h => {
+              const top = h.getBoundingClientRect().top;
+              if (top < 150) current = h.getAttribute('id'); // 距离顶部 150px 时激活
+          });
+          
+          tocLinks.forEach(link => {
+              link.classList.remove('active');
+              if (link.getAttribute('href').substring(1) === current) {
+                  link.classList.add('active');
+              }
+          });
+      };
+      
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll(); // 初始化执行一次
   }
 
+  // Bind Buttons
   document.getElementById('btn-like').addEventListener('click', async (e) => {
       if(localStorage.getItem(`liked_${id}`)) return UI.showToast('Already liked!', 'info');
       e.currentTarget.classList.add('liked');
@@ -249,13 +270,13 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // Icon
+    // Icon Logic
     const iconInput = document.getElementById('picon');
     const updateIcon = () => document.getElementById('icon-preview').innerHTML = renderIcon(iconInput.value || '📝');
     iconInput.addEventListener('input', updateIcon);
     document.getElementById('random-icon-btn').addEventListener('click', () => { iconInput.value = ['🚀','💡','🔥','✨','📝','📚','🎨','💻','🪐','🌊'][Math.floor(Math.random()*10)]; updateIcon(); });
 
-    // Crop (Global Event)
+    // Crop Logic
     let cropData = post.crop_data || null, isDrawing = false, startX, startY;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
     
@@ -273,13 +294,11 @@ export async function renderEditor(APP, id, router) {
         const rect = els.img.getBoundingClientRect();
         startX = e.clientX - rect.left;
         startY = e.clientY - rect.top;
-        
         els.box.style.left = startX + 'px';
         els.box.style.top = startY + 'px';
         els.box.style.width = '0px';
         els.box.style.height = '0px';
         els.box.style.display = 'block';
-        
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
     };
@@ -289,15 +308,12 @@ export async function renderEditor(APP, id, router) {
         const rect = els.img.getBoundingClientRect();
         let currX = e.clientX - rect.left;
         let currY = e.clientY - rect.top;
-        
         currX = Math.max(0, Math.min(currX, rect.width));
         currY = Math.max(0, Math.min(currY, rect.height));
-        
         const width = Math.abs(currX - startX);
         const height = Math.abs(currY - startY);
         const left = Math.min(currX, startX);
         const top = Math.min(currY, startY);
-        
         els.box.style.width = width + 'px';
         els.box.style.height = height + 'px';
         els.box.style.left = left + 'px';
