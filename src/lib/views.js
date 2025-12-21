@@ -4,7 +4,7 @@ import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 
-// --- 首页渲染 (保持不变) ---
+// --- 首页渲染 ---
 export async function renderHome(APP, state, router) {
   state.posts = await postsService.getAllPosts();
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
@@ -78,7 +78,7 @@ export async function renderHome(APP, state, router) {
   }));
 }
 
-// --- 文章详情页渲染 (保持不变) ---
+// --- 文章详情页渲染 ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
@@ -103,7 +103,9 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
 
   const charCount = post.content ? post.content.length : 0;
   const readTime = Math.max(1, Math.ceil(charCount / 400));
-  const content = DOMPurify.sanitize(marked.parse(post.content || ''));
+  
+  // 保持 breaks: true，结合 CSS 的 pre-wrap，实现完全的所见即所得
+  const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
   const comments = await commentsService.getCommentsByPostId(id);
 
   APP.innerHTML = `
@@ -231,7 +233,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- >>> 升级版编辑器：支持代码样式 + 随机图片 + Tab键 <<< ---
+// --- >>> 升级版编辑器：支持代码样式 + 随机图片 <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -283,7 +285,7 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // --- 裁剪逻辑 ---
+    // --- 裁剪逻辑 (保持不变) ---
     let cropData = post.crop_data || null; 
     let isDrawing = false, hasSelection = false, startX = 0, startY = 0;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
@@ -338,54 +340,49 @@ export async function renderEditor(APP, id, router) {
     document.getElementById('reset-crop-btn').addEventListener('click', () => { els.box.style.display='none'; cropData=null; hasSelection=false; });
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
 
-    // --- >>> 核心功能：插入图片 & Tab 支持 <<< ---
     const ta = document.getElementById('pc');
 
-    // 1. 插入随机图片逻辑
+    // --- 插入随机图片 ---
     const insertRandomImage = () => {
         const cursor = ta.selectionStart;
         const seed = Date.now();
         const imgMd = `\n![Random Image](https://picsum.photos/seed/${seed}/800/450)\n`;
-        ta.setRangeText(imgMd, cursor, cursor, 'end'); // 使用 setRangeText 更安全
+        ta.setRangeText(imgMd, cursor, cursor, 'end');
         ta.focus();
     };
 
-    // 2. 绑定按钮
     document.getElementById('insert-img-btn').addEventListener('click', insertRandomImage);
 
-    // 3. 绑定键盘事件 (Tab & Ctrl+I)
     ta.addEventListener('keydown', (e) => {
-        // Ctrl+I (Windows) or Cmd+I (Mac)
+        // Ctrl+I (Windows/Linux) or Cmd+I (Mac)
         if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
             e.preventDefault();
-            console.log('Ctrl+I detected, inserting image...');
+            console.log('Ctrl+I detected');
             insertRandomImage();
         }
-        
-        // Tab 键 -> 插入 4 个空格
+        // Tab 键缩进
         if (e.key === 'Tab') {
             e.preventDefault();
             const start = ta.selectionStart;
             const end = ta.selectionEnd;
-            // 在光标处插入4个空格
             ta.setRangeText('    ', start, end, 'end');
         }
     });
 
-    // 实时预览逻辑
     let mode = false, debounce;
     document.getElementById('toggle-preview-btn').addEventListener('click', (e) => { 
         mode = !mode; 
         e.target.textContent = mode ? 'Edit Mode' : 'Preview Mode'; 
         document.getElementById('editor-pane').classList.toggle('split'); 
         document.getElementById('preview-pane').classList.toggle('hidden'); 
-        if(mode) document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value)); 
+        // >>> 预览也开启 breaks: true <<<
+        if(mode) document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value, { breaks: true, gfm: true })); 
     });
     ta.addEventListener('input', () => { 
         if(mode) {
             clearTimeout(debounce);
             debounce = setTimeout(() => {
-                document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value));
+                document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value, { breaks: true, gfm: true }));
             }, 300);
         }
     });
