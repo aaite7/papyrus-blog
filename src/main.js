@@ -53,8 +53,9 @@ const router = {
       } else if (path.startsWith('/post/')) {
           await Views.renderPost(APP, path.split('/post/')[1], this, Visuals.updatePageMeta);
           
-          // >>> 关键点：页面渲染完后，触发高亮函数 <<<
+          // 渲染后立即触发一次高亮和进度条检查
           Visuals.highlightCode(); 
+          Visuals.updateProgressBar();
           
       } else {
           APP.innerHTML = '<div class="error">404: Scroll not found</div>';
@@ -86,19 +87,26 @@ function updateAuthUI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 1. 注入所有全局样式
   Visuals.injectGlobalStyles();
   
-  // >>> 关键点：启动时预加载高亮库 <<<
+  // 2. 加载第三方库
   Visuals.loadPrism(); 
   
+  // 3. 启动定时器和特效
   Visuals.updateClock();
   setInterval(Visuals.updateClock, 1000);
   Visuals.initSnowEffect();
+  
+  // >>> 核心升级：启动划词分享功能 <<<
+  Visuals.initSelectionSharer();
 
+  // 4. 监听滚动 (用于阅读进度条)
   window.addEventListener('scroll', () => {
       Visuals.updateProgressBar();
   });
 
+  // 5. 绑定导航栏按钮
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
       authService.logout();
