@@ -1,10 +1,10 @@
 // src/main.js
 import { authService } from './lib/auth.js';
-import * as Styles from './lib/styles.js'; // 样式
-import * as UI from './lib/ui.js';         // 交互
-import * as Views from './lib/views.js';   // 页面视图
+import * as Styles from './lib/styles.js';
+import * as UI from './lib/ui.js';
+import * as Views from './lib/views.js';
 
-// >>> 确保没有 import ... from './lib/visuals.js' <<<
+// >>> 注意：这里千万不要有 visuals.js 的引用！ <<<
 
 const APP = document.getElementById('app');
 const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
@@ -16,7 +16,6 @@ const router = {
       const link = e.target.closest('[data-link]');
       if (link) { e.preventDefault(); this.navigate(link.dataset.link); }
       const card = e.target.closest('[data-post-id]');
-      // 只有点击卡片且不是点击按钮/链接时才跳转
       if (card && !e.target.closest('button') && !e.target.closest('a')) {
         this.navigate(`/post/${card.dataset.postId}`);
       }
@@ -26,8 +25,6 @@ const router = {
   navigate(path) { window.history.pushState({}, '', path); this.route(); },
   async route() {
     const path = window.location.pathname;
-    
-    // 显示骨架屏
     APP.innerHTML = UI.renderSkeleton(); 
     window.scrollTo(0, 0);
     
@@ -62,19 +59,16 @@ function updateAuthUI() {
     logoutBtn.classList.add('hidden');
   }
 
-  // 时钟
   if (window.clockInterval) clearInterval(window.clockInterval);
   UI.updateClock();
   window.clockInterval = setInterval(UI.updateClock, 1000);
 
-  // 夜间模式回显
   if (localStorage.getItem('darkMode') === 'true') {
       document.body.classList.add('dark-mode');
       if(toggleBtn) toggleBtn.textContent = '☀';
   }
 }
 
-// 快捷键
 function initShortcuts() {
     document.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
@@ -92,7 +86,7 @@ function initShortcuts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  Styles.injectGlobalStyles(); // 注入样式
+  Styles.injectGlobalStyles();
   UI.loadPrism();
   UI.initSnowEffect();
   UI.initSelectionSharer();
