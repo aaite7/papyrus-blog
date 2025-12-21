@@ -63,138 +63,94 @@ export function injectGlobalStyles() {
     .code-wrapper:hover .copy-btn { opacity: 1; }
     .copy-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-1px); }
 
-    /* --- >>> 核心修复：文章内容强制保留格式 <<< --- */
+    /* --- 文章内容样式 --- */
     .article-content {
         font-size: 1.15rem;
-        line-height: 1.8; /* 稍微调小行高，让对齐更紧凑 */
+        line-height: 1.8;
         color: var(--ink);
-        
-        /* 关键：保留空格和换行，但允许自动换行防止撑破 */
         white-space: pre-wrap !important; 
-        
-        /* 确保长单词断行 */
         overflow-wrap: break-word !important;
         word-wrap: break-word !important;
         word-break: break-word !important;
-        
         max-width: 100%;
-        text-align: left; /* 强制左对齐，对齐代码和文本 */
-        font-family: 'Lora', 'Consolas', sans-serif; /* 混合字体优化显示 */
+        text-align: left;
+        font-family: 'Lora', 'Consolas', sans-serif;
     }
-    
-    /* 修正段落间距，因为有了 pre-wrap，回车本身就会产生空行，所以减小 margin */
-    .article-content p {
-        margin-bottom: 0.5em !important; 
-        margin-top: 0 !important;
-    }
+    .article-content p { margin-bottom: 0.5em !important; margin-top: 0 !important; }
+    .article-content h1, .article-content h2, .article-content h3 { margin-top: 1.5em !important; margin-bottom: 0.8em !important; font-family: 'Playfair Display', serif; }
+    .article-content img, .article-content iframe, .article-content video { max-width: 100% !important; height: auto !important; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin: 1em 0; cursor: zoom-in; transition: transform 0.3s; }
+    .article-content table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1.5em 0; }
+    .article-content th, .article-content td { border: 1px solid var(--sepia); padding: 8px 12px; }
 
-    /* 标题样式 */
-    .article-content h1, 
-    .article-content h2, 
-    .article-content h3 {
-        margin-top: 1.5em !important;
-        margin-bottom: 0.8em !important;
-        font-family: 'Playfair Display', serif;
+    /* --- >>> 核心升级：灯箱效果 (Lightbox) <<< --- */
+    .lightbox-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 2147483647;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; transition: opacity 0.3s; pointer-events: none;
     }
+    .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
+    .lightbox-img {
+        max-width: 95%; max-height: 95%;
+        border: 2px solid var(--gold);
+        box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        transform: scale(0.9); transition: transform 0.3s;
+    }
+    .lightbox-overlay.active .lightbox-img { transform: scale(1); }
 
-    .article-content img,
-    .article-content iframe,
-    .article-content video {
-        max-width: 100% !important;
-        height: auto !important;
-        border-radius: 4px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        margin: 1em 0;
-    }
-
-    .article-content table {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        border-collapse: collapse;
-        margin: 1.5em 0;
-    }
-    .article-content th, .article-content td {
-        border: 1px solid var(--sepia);
-        padding: 8px 12px;
+    /* --- >>> 核心升级：搜索高亮 <<< --- */
+    mark {
+        background-color: rgba(212, 175, 55, 0.4); /* 金色高亮 */
+        color: inherit;
+        padding: 0 2px;
+        border-radius: 2px;
     }
   `;
   document.head.appendChild(style);
 }
 
-// ... (以下所有函数保持不变，确保完整复制) ...
-export function loadPrism() {
-    if (window.Prism) return;
-    const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css'; document.head.appendChild(link);
-    const script = document.createElement('script'); script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
-    script.onload = () => { const a = document.createElement('script'); a.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js'; document.body.appendChild(a); };
-    document.body.appendChild(script);
-}
+// ... (以下函数保持不变: loadPrism, highlightCode, isSnowSeason, initSnowEffect, startSnowing, ensureProgressBar, updateProgressBar, updateClock, updatePageMeta) ...
+// 为了方便你复制，我这里只列出新增的函数，请把它们加到文件末尾或保留原有的
 
-export function highlightCode() {
-    const interval = setInterval(() => {
-        document.querySelectorAll('pre').forEach(pre => {
-            if (pre.parentElement.classList.contains('code-wrapper')) return;
-            const wrapper = document.createElement('div'); wrapper.className = 'code-wrapper';
-            pre.parentNode.insertBefore(wrapper, pre); wrapper.appendChild(pre);
-            const btn = document.createElement('button'); btn.className = 'copy-btn'; btn.textContent = 'Copy Code';
-            btn.addEventListener('click', () => { navigator.clipboard.writeText(pre.innerText).then(() => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy Code', 2000); }); });
-            wrapper.appendChild(btn);
+export function loadPrism() { if(window.Prism)return; const l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css';document.head.appendChild(l);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';s.onload=()=>{const a=document.createElement('script');a.src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js';document.body.appendChild(a)};document.body.appendChild(s); }
+export function highlightCode() { const i=setInterval(()=>{ document.querySelectorAll('pre').forEach(p=>{ if(p.parentElement.classList.contains('code-wrapper'))return; const w=document.createElement('div');w.className='code-wrapper';p.parentNode.insertBefore(w,p);w.appendChild(p); const b=document.createElement('button');b.className='copy-btn';b.textContent='Copy Code'; b.addEventListener('click',()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.textContent='Copied!';setTimeout(()=>b.textContent='Copy Code',2000)})}); w.appendChild(b); }); if(window.Prism){window.Prism.highlightAll();clearInterval(i)} },200); setTimeout(()=>clearInterval(i),5000); }
+function isSnowSeason(){const n=new Date(),m=n.getMonth()+1,d=n.getDate();return(m===12||m===1||(m===2&&d<=10))}
+export function initSnowEffect(){if(!isSnowSeason())return;const o=new MutationObserver(()=>{const h=document.querySelector('.hero');if(h&&!h.dataset.snowing){h.dataset.snowing="true";startSnowing(h)}});o.observe(document.body,{childList:true,subtree:true})}
+function startSnowing(c){if(window.snowInterval)clearInterval(window.snowInterval);window.snowInterval=setInterval(()=>{if(!document.contains(c))return;const s=document.createElement('div');s.className='snowflake';const z=Math.random()*4+2+'px';s.style.width=z;s.style.height=z;s.style.left=Math.random()*100+'%';s.style.animation=`snowfall ${Math.random()*5+5+'s'} linear forwards`;s.style.opacity=Math.random()*0.5+0.3;c.appendChild(s);setTimeout(()=>s.remove(),10000)},300)}
+function ensureProgressBar(){let b=document.getElementById('reading-progress');if(!b){b=document.createElement('div');b.id='reading-progress';document.body.appendChild(b)}return b}
+export function updateProgressBar(){if(!window.location.pathname.startsWith('/post/')){const b=document.getElementById('reading-progress');if(b)b.style.width='0%';return}const b=ensureProgressBar(),s=window.scrollY||document.documentElement.scrollTop,h=document.documentElement.scrollHeight-window.innerHeight;b.style.width=(h>0?(s/h)*100:0)+'%'}
+export function updateClock(){const d=document.getElementById('clock-display');if(!d)return;const n=new Date();let l='';try{l=new Intl.DateTimeFormat('zh-CN',{calendar:'chinese',year:'numeric',month:'long',day:'numeric'}).format(n).replace(/^\d+/,'')}catch(e){}d.innerHTML=`<div style="font-size: 1rem; font-weight: 600;">${n.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div style="font-size: 0.85rem; opacity: 0.8;">${n.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>${l?`<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${l}</div>`:''}`}
+export function updatePageMeta(p){document.title=`${p.title} - Minimalist`;let m=document.querySelector('meta[name="description"]');if(!m){m=document.createElement('meta');m.name='description';document.head.appendChild(m)}m.content=p.content?.substring(0,160)||'Read this post on Minimalist blog'}
+
+// --- >>> 核心功能：初始化灯箱 <<< ---
+export function initLightbox() {
+    // 1. 查找文章内的所有图片
+    const images = document.querySelectorAll('.article-content img');
+    if (images.length === 0) return;
+
+    // 2. 创建或获取 Overlay
+    let overlay = document.querySelector('.lightbox-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'lightbox-overlay';
+        overlay.innerHTML = '<img class="lightbox-img" src="">';
+        document.body.appendChild(overlay);
+        
+        // 点击遮罩层关闭
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('active');
         });
-        if (window.Prism) { window.Prism.highlightAll(); clearInterval(interval); }
-    }, 200); 
-    setTimeout(() => clearInterval(interval), 5000);
-}
+    }
 
-function isSnowSeason() {
-    const now = new Date(); const m = now.getMonth() + 1; const d = now.getDate();
-    return (m === 12 || m === 1 || (m === 2 && d <= 10));
-}
+    const imgElement = overlay.querySelector('img');
 
-export function initSnowEffect() {
-    if (!isSnowSeason()) return;
-    const observer = new MutationObserver(() => {
-        const hero = document.querySelector('.hero');
-        if (hero && !hero.dataset.snowing) { hero.dataset.snowing = "true"; startSnowing(hero); }
+    // 3. 绑定点击事件
+    images.forEach(img => {
+        img.style.cursor = 'zoom-in';
+        img.addEventListener('click', (e) => {
+            e.stopPropagation(); // 防止冒泡
+            imgElement.src = img.src; // 设置大图源
+            overlay.classList.add('active'); // 显示
+        });
     });
-    observer.observe(document.body, { childList: true, subtree: true });
-}
-
-function startSnowing(container) {
-    if (window.snowInterval) clearInterval(window.snowInterval);
-    window.snowInterval = setInterval(() => {
-        if (!document.contains(container)) return;
-        const s = document.createElement('div'); s.className = 'snowflake';
-        const size = Math.random() * 4 + 2 + 'px'; s.style.width = size; s.style.height = size; s.style.left = Math.random() * 100 + '%';
-        s.style.animation = `snowfall ${Math.random() * 5 + 5 + 's'} linear forwards`; s.style.opacity = Math.random() * 0.5 + 0.3;
-        container.appendChild(s); setTimeout(() => s.remove(), 10000); 
-    }, 300);
-}
-
-function ensureProgressBar() {
-    let bar = document.getElementById('reading-progress');
-    if (!bar) { bar = document.createElement('div'); bar.id = 'reading-progress'; document.body.appendChild(bar); }
-    return bar;
-}
-
-export function updateProgressBar() {
-    if (!window.location.pathname.startsWith('/post/')) { const b = document.getElementById('reading-progress'); if(b) b.style.width = '0%'; return; }
-    const bar = ensureProgressBar();
-    const st = window.scrollY || document.documentElement.scrollTop;
-    const dh = document.documentElement.scrollHeight - window.innerHeight;
-    bar.style.width = (dh > 0 ? (st / dh) * 100 : 0) + '%';
-}
-
-export function updateClock() {
-  const d = document.getElementById('clock-display'); if (!d) return;
-  const n = new Date();
-  let l = ''; try { l = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(n).replace(/^\d+/, ''); } catch (e) {}
-  d.innerHTML = `<div style="font-size: 1rem; font-weight: 600;">${n.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div style="font-size: 0.85rem; opacity: 0.8;">${n.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>${l?`<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${l}</div>`:''}`;
-}
-
-export function updatePageMeta(post) {
-  document.title = `${post.title} - Minimalist`;
-  let m = document.querySelector('meta[name="description"]');
-  if (!m) { m = document.createElement('meta'); m.name = 'description'; document.head.appendChild(m); }
-  m.content = post.content?.substring(0, 160) || 'Read this post on Minimalist blog';
 }
