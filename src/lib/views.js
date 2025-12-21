@@ -5,7 +5,6 @@ import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 import * as UI from './ui.js';
 
-// --- Helpers ---
 function highlightText(text, query) {
     if (!query || !text) return text;
     const regex = new RegExp(`(${query})`, 'gi');
@@ -20,7 +19,7 @@ function renderIcon(iconStr, className = '') {
     return `<span class="${className}">${iconStr}</span>`;
 }
 
-// --- 1. 首页 (Home) ---
+// --- Home ---
 export async function renderHome(APP, state) {
   state.posts = await postsService.getAllPosts();
   const renderList = () => {
@@ -51,36 +50,23 @@ export async function renderHome(APP, state) {
                                 const container = this.parentElement;
                                 const cW = container.offsetWidth;
                                 const cH = container.offsetHeight;
-                                // 获取数据库存的裁剪数据 (自然尺寸)
                                 const cropW = ${p.crop_data.width};
                                 const cropH = ${p.crop_data.height};
                                 const cropX = ${p.crop_data.x};
                                 const cropY = ${p.crop_data.y};
-                                
-                                // 1. 计算缩放比例：确保裁剪区域能填满容器 (取最大比例，类似 object-fit: cover)
                                 const scale = Math.max(cW / cropW, cH / cropH);
-                                
-                                // 2. 应用缩放
                                 this.width = this.naturalWidth * scale;
                                 this.height = this.naturalHeight * scale;
-                                
-                                // 3. 计算位移：将裁剪区域的中心对准容器的中心
-                                // 负的 cropX * scale 是把图片拉到裁剪起点
-                                // + (容器宽 - 裁剪宽缩放后) / 2 是为了居中
                                 const left = (-cropX * scale) + (cW - cropW * scale) / 2;
                                 const top = (-cropY * scale) + (cH - cropH * scale) / 2;
-                                
                                 this.style.left = left + 'px';
                                 this.style.top = top + 'px';
                              "
                         >
                     </div>` 
-                    : 
-                    // 如果没有裁剪数据，显示完整图片 (Cover模式)
-                    `<div class="manuscript-image-container" style="width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
+                    : `<div class="manuscript-image-container" style="width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;">
                         <img src="${p.image}" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
-                    </div>`
-                ) : ''}
+                    </div>`) : ''}
                 
                 <p class="manuscript-excerpt">${highlightText(p.content?.substring(0, 150), state.searchQuery)}...</p>
                 <div class="manuscript-footer"><span>👁 ${p.view_count||0}</span></div>
@@ -89,20 +75,12 @@ export async function renderHome(APP, state) {
         ${renderFooter()}
       `;
       document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
-      
-      // 窗口大小改变时，重新触发计算 (防止拉伸窗口出现白边)
-      window.addEventListener('resize', () => {
-          document.querySelectorAll('.manuscript-image-container img[onload]').forEach(img => {
-              // 重新触发 onload 逻辑
-              const event = new Event('load');
-              img.dispatchEvent(event);
-          });
-      });
+      window.addEventListener('resize', () => { document.querySelectorAll('.manuscript-image-container img[onload]').forEach(img => img.dispatchEvent(new Event('load'))); });
   };
   renderList();
 }
 
-// --- 2. 文章详情 (Post) ---
+// --- Post ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">Lost scroll...</div>'; return; }
@@ -118,11 +96,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const likes = post.likes || 0;
   const isLiked = localStorage.getItem(`liked_${id}`);
 
-  // 详情页大图：通常详情页我们希望看到清晰的图，如果裁剪过，我们也可以应用裁剪
-  // 但为了视觉冲击力，详情页通常使用 Cover 模式填满宽度
   let imageHTML = '';
   if (post.image) {
-      // 详情页也使用智能裁剪逻辑，但高度设为自适应或固定
       if (post.crop_data) {
           imageHTML = `
             <div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;">
@@ -144,7 +119,6 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   }
 
   APP.innerHTML = `
-    <div id="reading-progress"></div>
     <div class="floating-bar">
         <div class="action-btn ${isLiked?'liked':''}" id="btn-like">♥ <span class="btn-badge" id="l-cnt">${likes}</span></div>
         <div class="action-btn" id="btn-share">🔗</div>
@@ -164,6 +138,9 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   `;
 
   UI.initLightbox();
+  // 重新触发一次进度条计算，确保它知道现在在文章页
+  UI.initReadingProgress(); 
+
   if (generateTOC(post.content).length > 0) { 
       document.getElementById('toc').innerHTML = renderTOC(generateTOC(post.content)); 
       document.getElementById('toc').querySelectorAll('a').forEach(l => l.addEventListener('click', e => { e.preventDefault(); document.getElementById(l.getAttribute('href').substring(1))?.scrollIntoView({behavior:'smooth'}); })); 
@@ -231,7 +208,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- Editor (Keep logic here) ---
+// --- Editor ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain', icon: '' };
     if(id) post = await postsService.getPostById(id);
@@ -334,7 +311,6 @@ export async function renderEditor(APP, id, router) {
     };
 
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
-        // Save NATURAL dimensions of the crop box
         const sX = els.img.naturalWidth / els.img.width;
         const sY = els.img.naturalHeight / els.img.height;
         cropData = { 
