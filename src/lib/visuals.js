@@ -16,60 +16,98 @@ export function injectGlobalStyles() {
     .hero { position: relative !important; overflow: hidden !important; }
     .snowflake { position: absolute; top: -10px; background: white; border-radius: 50%; pointer-events: none; z-index: 1; box-shadow: 0 0 5px rgba(255,255,255,0.8); }
 
-    /* --- 阅读进度条 (已增强) --- */
-    #reading-progress {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 0%;
-        height: 5px; /* 稍微加粗一点 */
-        background: #d4af37; /* 备用金色 */
-        background: linear-gradient(90deg, var(--gold, #d4af37), var(--burgundy, #800020));
-        z-index: 2147483647; /* 确保层级最高，不被导航栏遮挡 */
-        transition: width 0.1s ease-out;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.2);
-        pointer-events: none;
-    }
+    /* --- 阅读进度条 --- */
+    #reading-progress { position: fixed; top: 0; left: 0; width: 0%; height: 5px; background: linear-gradient(90deg, var(--gold, #d4af37), var(--burgundy, #800020)); z-index: 2147483647; transition: width 0.1s ease-out; box-shadow: 0 1px 5px rgba(0,0,0,0.2); pointer-events: none; }
 
-    /* --- 图片裁剪样式 --- */
+    /* --- 图片裁剪 --- */
     .image-crop-container { margin: 20px 0; padding: 20px; background: var(--parchment); border: 2px solid var(--gold); }
     .hidden { display: none !important; }
     #crop-wrapper { position: relative; display: inline-block; max-width: 100%; border: 2px solid var(--gold); user-select: none; cursor: crosshair; }
     #crop-box { position: absolute; border: 2px dashed #fff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); display: none; pointer-events: none; z-index: 10; }
     .crop-controls { display: flex; gap: 10px; margin-top: 15px; }
+
+    /* --- 代码高亮增强 (Copy Button) --- */
+    .code-wrapper { position: relative; margin: 1.5em 0; }
+    .copy-btn {
+        position: absolute; top: 5px; right: 5px;
+        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+        color: #ddd; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px;
+        cursor: pointer; transition: all 0.2s; opacity: 0;
+    }
+    .code-wrapper:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { background: rgba(255,255,255,0.3); color: #fff; }
+    /* Prism 覆盖样式，使其适应你的极简主题 */
+    code[class*="language-"], pre[class*="language-"] { font-family: 'Fira Code', 'Consolas', monospace !important; font-size: 0.95rem !important; }
   `;
   document.head.appendChild(style);
 }
 
-// --- 进度条逻辑 (核心修复) ---
-function ensureProgressBar() {
-    let bar = document.getElementById('reading-progress');
-    if (!bar) {
-        bar = document.createElement('div');
-        bar.id = 'reading-progress';
-        document.body.appendChild(bar); // 直接挂载到 body，不依赖 APP 容器
-    }
-    return bar;
+// --- 动态加载 Prism.js ---
+export function loadPrism() {
+    if (window.Prism) return; // 避免重复加载
+
+    // 1. 加载 CSS (选择 Tomorrow Night 主题，适合暗色/复古风)
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css';
+    document.head.appendChild(link);
+
+    // 2. 加载 JS
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';
+    script.onload = () => {
+        // 加载常用语言包
+        const autoloader = document.createElement('script');
+        autoloader.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js';
+        document.body.appendChild(autoloader);
+    };
+    document.body.appendChild(script);
 }
 
-export function updateProgressBar() {
-    // 只有在文章页面才显示进度条 (URL包含 /post/)
-    if (!window.location.pathname.startsWith('/post/')) {
-        const bar = document.getElementById('reading-progress');
-        if (bar) bar.style.width = '0%';
-        return;
-    }
+// --- 触发高亮 + 注入复制按钮 ---
+export function highlightCode() {
+    // 等待 Prism 加载完成
+    const interval = setInterval(() => {
+        if (window.Prism) {
+            clearInterval(interval);
+            
+            // 1. 执行高亮
+            window.Prism.highlightAll();
 
-    const progressBar = ensureProgressBar();
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            // 2. 注入复制按钮
+            document.querySelectorAll('pre').forEach(pre => {
+                // 防止重复注入
+                if (pre.parentElement.classList.contains('code-wrapper')) return;
+
+                // 包裹一层 wrapper 以便定位按钮
+                const wrapper = document.createElement('div');
+                wrapper.className = 'code-wrapper';
+                pre.parentNode.insertBefore(wrapper, pre);
+                wrapper.appendChild(pre);
+
+                // 创建按钮
+                const btn = document.createElement('button');
+                btn.className = 'copy-btn';
+                btn.textContent = 'Copy';
+                
+                btn.addEventListener('click', () => {
+                    const code = pre.querySelector('code').innerText;
+                    navigator.clipboard.writeText(code).then(() => {
+                        btn.textContent = 'Copied!';
+                        setTimeout(() => btn.textContent = 'Copy', 2000);
+                    });
+                });
+
+                wrapper.appendChild(btn);
+            });
+        }
+    }, 100); // 每100ms检查一次
     
-    // 防止除以0
-    const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-    progressBar.style.width = scrollPercent + '%';
+    // 超时清除 (5秒)
+    setTimeout(() => clearInterval(interval), 5000);
 }
 
-// ... (以下代码保持不变) ...
+// ... (以下代码保持不变：isSnowSeason, initSnowEffect, updateClock, updateProgressBar, updatePageMeta) ...
 
 function isSnowSeason() {
     const now = new Date();
@@ -123,6 +161,29 @@ export function updateClock() {
     lunarStr = lunarStr.replace(/^\d+/, ''); 
   } catch (e) { console.warn('Lunar calendar not supported'); }
   clockDisplay.innerHTML = `<div style="font-size: 1rem; font-weight: 600;">${timeStr}</div><div style="font-size: 0.85rem; opacity: 0.8;">${dateStr}</div>${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', 'STKaiti', serif;">农历 ${lunarStr}</div>` : ''}`;
+}
+
+function ensureProgressBar() {
+    let bar = document.getElementById('reading-progress');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'reading-progress';
+        document.body.appendChild(bar); 
+    }
+    return bar;
+}
+
+export function updateProgressBar() {
+    if (!window.location.pathname.startsWith('/post/')) {
+        const bar = document.getElementById('reading-progress');
+        if (bar) bar.style.width = '0%';
+        return;
+    }
+    const progressBar = ensureProgressBar();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    progressBar.style.width = scrollPercent + '%';
 }
 
 export function updatePageMeta(post) {
