@@ -35,73 +35,82 @@ export function injectGlobalStyles() {
     .list-icon img { width: 24px; height: 24px; border-radius: 4px; object-fit: cover; vertical-align: middle; }
     .pinned-badge { display: inline-block; background: #D4AF37; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 8px; vertical-align: middle; text-transform: uppercase; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-    /* --- >>> 核心修复：悬浮目录 & 布局 <<< --- */
+    /* --- >>> 核心修复：悬浮目录 (无滚动条版) <<< --- */
     
-    /* 1. 文章容器改回窄版，专注阅读 */
     .single-manuscript {
-        max-width: 800px !important; /* 改回 800px，阅读体验更好 */
+        max-width: 800px !important;
         margin: 40px auto;
         padding: 0 20px;
-        position: relative; /* 为目录定位做参考 */
+        position: relative;
     }
 
-    /* 2. 悬浮目录 (Floating TOC) */
     #toc {
-        position: fixed;          /* 固定在屏幕上 */
-        top: 100px;               /* 距离顶部高度 */
-        left: calc(50% - 600px);  /* 核心技巧：居中线 - (文章宽的一半 + 目录宽 + 间距) */
-        width: 180px;             /* 目录宽度 */
+        position: fixed;
+        top: 120px;
+        /* 向左推得更远，如果屏幕够大，它会离文章主体有明显距离 */
+        left: calc(50% - 780px);
+        width: 220px;
         max-height: 70vh;
+        
+        /* 隐藏滚动条的核心代码 */
         overflow-y: auto;
-        text-align: right;        /* 文字靠右，对齐文章 */
-        padding-right: 15px;
-        border-right: 2px solid rgba(212, 175, 55, 0.2); /* 金色竖线 */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+        
+        text-align: right; /* 文字靠右，形成对齐感 */
+        padding-right: 10px;
+        /* 去掉之前的金色边框，更简洁 */
+        border-right: none; 
         z-index: 100;
         
-        /* 动画效果 */
         opacity: 0; 
         transform: translateX(-20px);
         animation: fadeInSlide 0.5s ease-out forwards;
-        animation-delay: 0.5s; /* 等文章加载完再出现 */
+        animation-delay: 0.3s;
     }
     
+    /* 隐藏 Chrome/Safari 的滚动条 */
+    #toc::-webkit-scrollbar { 
+        display: none; 
+    }
+
     @keyframes fadeInSlide { to { opacity: 1; transform: translateX(0); } }
 
     #toc a { 
         display: block; 
-        margin-bottom: 12px; 
-        color: #888; 
+        margin-bottom: 14px; 
+        color: #999; /* 默认颜色淡一点 */
         text-decoration: none; 
-        font-size: 0.85rem; 
+        font-size: 0.9rem; 
         transition: all 0.3s;
         line-height: 1.4;
         position: relative;
+        font-family: 'Lora', serif;
     }
     
-    #toc a:hover { color: #D4AF37; }
+    #toc a:hover { color: #D4AF37; transform: translateX(-5px); }
     
-    /* 激活状态 (滚动监听高亮) */
+    /* 激活状态 */
     #toc a.active { 
         color: #8B0000; 
         font-weight: bold; 
-        transform: scale(1.05); /* 微微放大 */
+        transform: scale(1.05);
     }
     
-    /* 激活时右边加个小圆点指示 */
+    /* 激活时的小圆点 */
     #toc a.active::after {
         content: '●';
         position: absolute;
-        right: -20px; /* 放在分割线上 */
+        right: -15px;
         top: 0;
         color: #D4AF37;
-        font-size: 0.8rem;
+        font-size: 0.6rem;
+        line-height: 1.8;
     }
 
     #toc:empty { display: none; }
 
-    /* 3. 文章内容 */
     .article-content {
-        /* 不需要 Flex 了，直接铺满容器 */
         width: 100%;
         font-size: 1.15rem; 
         line-height: 1.8; 
@@ -113,14 +122,14 @@ export function injectGlobalStyles() {
         font-family: 'Lora', sans-serif;
     }
     
-    /* 移动端适配：屏幕小于 1300px 时隐藏悬浮目录 (防止盖住文字) */
-    @media (max-width: 1300px) {
+    /* 屏幕不够宽时，自动隐藏目录，防止遮挡文字 */
+    @media (max-width: 1400px) {
         #toc { display: none; }
     }
 
-    /* --- 其他辅助样式 --- */
+    /* --- 其他样式 --- */
     .article-content p { margin-bottom: 1em !important; }
-    .article-content h1, .article-content h2, .article-content h3 { margin-top: 1.5em !important; margin-bottom: 0.8em !important; font-family: 'Playfair Display', serif; scroll-margin-top: 80px; /* 锚点定位偏移，防止被顶部遮挡 */ }
+    .article-content h1, .article-content h2, .article-content h3 { margin-top: 1.5em !important; margin-bottom: 0.8em !important; font-family: 'Playfair Display', serif; scroll-margin-top: 80px; }
     .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; cursor: zoom-in; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     
     .editor-container { display: flex; gap: 20px; align-items: stretch; }
