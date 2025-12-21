@@ -3,6 +3,15 @@ import { postsService } from './posts.js';
 import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
+import { initLightbox } from './visuals.js'; // 导入灯箱初始化函数
+
+// --- 辅助：搜索高亮函数 ---
+function highlightText(text, query) {
+    if (!query || !text) return text;
+    // 创建不区分大小写的正则
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<mark>$1</mark>');
+}
 
 // --- 首页渲染 ---
 export async function renderHome(APP, state, router) {
@@ -17,7 +26,7 @@ export async function renderHome(APP, state, router) {
     </div>
     <div class="divider">✦ ✦ ✦</div>
     <div id="popular-posts-container"></div>
-    <div class="search-scroll"><input type="search" id="search" placeholder="Seek the words within..."></div>
+    <div class="search-scroll"><input type="search" id="search" placeholder="Seek the words within..." value="${state.searchQuery || ''}"></div>
     <div class="filter-tags">
       <div class="wax-seal active" data-filter="all">All Manuscripts</div>
       ${categories.map(c => `<div class="wax-seal" data-filter="category:${c}">${c}</div>`).join('')}
@@ -41,9 +50,15 @@ export async function renderHome(APP, state, router) {
       const container = document.getElementById('manuscripts');
       if (!filtered.length) { container.innerHTML = '<div class="empty-scroll"><h3>No manuscripts found</h3></div>'; return; }
 
-      container.innerHTML = filtered.map(p => `
+      container.innerHTML = filtered.map(p => {
+        // >>> 核心升级：应用搜索高亮 <<<
+        const displayTitle = highlightText(p.title, state.searchQuery);
+        let excerpt = p.content?.substring(0, 150) || '';
+        excerpt = highlightText(excerpt, state.searchQuery); // 高亮摘要
+
+        return `
         <div class="manuscript" data-post-id="${p.id}">
-          <div class="manuscript-header"><h2 class="manuscript-title">${p.title}</h2><div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div></div>
+          <div class="manuscript-header"><h2 class="manuscript-title">${displayTitle}</h2><div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div></div>
           <div class="manuscript-meta"><span>✎ ${p.category || 'Uncategorized'}</span></div>
           ${p.image ? (p.crop_data ? `
             <div class="manuscript-image-container" style="width: 100%; margin: 15px 0;">
@@ -60,14 +75,20 @@ export async function renderHome(APP, state, router) {
                      })(this)" loading="lazy">
               </div>
             </div>` : `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">`) : ''}
-          <p class="manuscript-excerpt">${p.content?.substring(0, 150) || ''}...</p>
+          <p class="manuscript-excerpt">${excerpt}...</p>
           <div class="manuscript-footer"><div class="manuscript-tags">${(p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div><span>👁 ${p.view_count||0}</span></div>
         </div>
-      `).join('');
+      `;
+      }).join('');
   };
   renderList();
 
-  document.getElementById('search').addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
+  const searchInput = document.getElementById('search');
+  searchInput.focus(); // 自动聚焦搜索框
+  // 光标移到最后
+  searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+
+  searchInput.addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
   document.querySelectorAll('.wax-seal').forEach(seal => seal.addEventListener('click', e => {
       document.querySelectorAll('.wax-seal').forEach(s => s.classList.remove('active')); e.target.classList.add('active');
       const f = e.target.dataset.filter;
@@ -104,7 +125,7 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const charCount = post.content ? post.content.length : 0;
   const readTime = Math.max(1, Math.ceil(charCount / 400));
   
-  // 保持 breaks: true，结合 CSS 的 pre-wrap，实现完全的所见即所得
+  // 保持所见即所得格式
   const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
   const comments = await commentsService.getCommentsByPostId(id);
 
@@ -142,6 +163,9 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       <div id="comments-list"></div>
     </div>
   `;
+
+  // >>> 核心升级：激活灯箱 <<<
+  initLightbox();
 
   const headings = generateTOC(post.content);
   if (headings.length > 0) {
@@ -233,7 +257,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- >>> 升级版编辑器：支持代码样式 + 随机图片 <<< ---
+// --- 编辑器保持不变 ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
