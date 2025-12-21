@@ -26,34 +26,26 @@ export function injectGlobalStyles() {
     #crop-box { position: absolute; border: 2px dashed #fff; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5); display: none; pointer-events: none; z-index: 10; }
     .crop-controls { display: flex; gap: 10px; margin-top: 15px; }
 
-    /* --- >>> 核心修复：代码编辑器样式 <<< --- */
+    /* --- 代码编辑器样式 (VS Code 风格) --- */
     .editor-textarea {
-        background-color: #1e1e1e !important; /* VS Code 深色背景 */
-        color: #d4d4d4 !important; /* 浅灰文字 */
-        font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important; /* 强制等宽字体 */
+        background-color: #1e1e1e !important; 
+        color: #d4d4d4 !important; 
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important; 
         font-size: 14px !important;
         line-height: 1.6 !important;
         padding: 20px !important;
         border: 2px solid var(--gold) !important;
         border-radius: 6px;
-        
-        /* >>> 关键：禁止自动换行，解决粘贴乱的问题 <<< */
         white-space: pre !important; 
-        overflow-x: auto !important; /* 允许横向滚动 */
+        overflow-x: auto !important; 
         overflow-y: auto !important;
         word-wrap: normal !important;
-        
-        tab-size: 4; /* Tab 宽度设为 4 个空格 */
-        min-height: 500px; /* 增加高度 */
+        tab-size: 4; 
+        min-height: 500px;
     }
-    
-    .editor-textarea:focus {
-        outline: none;
-        border-color: var(--burgundy) !important;
-        box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-    }
+    .editor-textarea:focus { outline: none; border-color: var(--burgundy) !important; box-shadow: 0 0 15px rgba(212, 175, 55, 0.3); }
 
-    /* --- 代码高亮显示样式 --- */
+    /* --- 代码显示样式 --- */
     .code-wrapper { position: relative; margin: 1.5em 0; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: left !important; }
     pre {
         background: #272822 !important; 
@@ -70,11 +62,53 @@ export function injectGlobalStyles() {
     .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 0.75rem; padding: 5px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s; opacity: 0; z-index: 100; backdrop-filter: blur(2px); }
     .code-wrapper:hover .copy-btn { opacity: 1; }
     .copy-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-1px); }
+
+    /* --- >>> 文章内容样式 (修复溢出 + 移除首字母下沉) <<< --- */
+    .article-content {
+        font-size: 1.15rem;
+        line-height: 2;
+        color: var(--ink);
+        overflow-wrap: break-word !important; /* 强制长单词换行 */
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+        max-width: 100%;
+        text-align: justify; /* 两端对齐，阅读体验更好 */
+    }
+    
+    .article-content p {
+        margin-bottom: 1.8em;
+        /* text-indent: 2em;  <-- 如果你想要段落缩进可以保留这行，不想要就注释掉 */
+    }
+
+    /* 之前这里有 p:first-of-type::first-letter 样式，已被彻底删除 */
+    
+    /* 确保图片、视频不撑破页面 */
+    .article-content img,
+    .article-content iframe,
+    .article-content video {
+        max-width: 100% !important;
+        height: auto !important;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    /* 优化表格显示 */
+    .article-content table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        border-collapse: collapse;
+        margin: 20px 0;
+    }
+    .article-content th, .article-content td {
+        border: 1px solid var(--sepia);
+        padding: 8px 12px;
+    }
   `;
   document.head.appendChild(style);
 }
 
-// ... (其余函数保持不变，确保完整复制) ...
+// ... (以下函数保持不变) ...
 export function loadPrism() {
     if (window.Prism) return;
     const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css'; document.head.appendChild(link);
