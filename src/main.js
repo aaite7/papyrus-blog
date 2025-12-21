@@ -1,10 +1,8 @@
 // src/main.js
 import { authService } from './lib/auth.js';
-import * as Styles from './lib/styles.js'; // 样式中心
-import * as UI from './lib/ui.js';         // 交互中心
-import * as Views from './lib/views.js';   // 页面视图
-
-// >>> 关键点：这里绝对不能有 import ... from './lib/visuals.js' <<<
+import * as Styles from './lib/styles.js';
+import * as UI from './lib/ui.js';
+import * as Views from './lib/views.js';
 
 const APP = document.getElementById('app');
 const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
@@ -16,7 +14,6 @@ const router = {
       const link = e.target.closest('[data-link]');
       if (link) { e.preventDefault(); this.navigate(link.dataset.link); }
       const card = e.target.closest('[data-post-id]');
-      // 只有点击卡片且不是点击按钮/链接时才跳转
       if (card && !e.target.closest('button') && !e.target.closest('a')) {
         this.navigate(`/post/${card.dataset.postId}`);
       }
@@ -27,8 +24,8 @@ const router = {
   async route() {
     const path = window.location.pathname;
     
-    // 加载骨架屏
-    APP.innerHTML = UI.renderSkeleton(); 
+    // 渲染骨架屏
+    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : '<div class="loading">Loading...</div>';
     window.scrollTo(0, 0);
     
     try {
@@ -39,8 +36,8 @@ const router = {
         else if (path.startsWith('/edit/')) state.isAdmin ? await Views.renderEditor(APP, path.split('/edit/')[1], this) : this.navigate('/login');
         else if (path.startsWith('/post/')) {
             await Views.renderPost(APP, path.split('/post/')[1], this, UI.updatePageMeta);
-            UI.highlightCode();
-            UI.initReadingProgress();
+            if(UI.highlightCode) UI.highlightCode();
+            if(UI.initReadingProgress) UI.initReadingProgress();
         }
         else APP.innerHTML = '<div class="error">404: Scroll not found</div>';
     } catch (e) {
@@ -62,19 +59,18 @@ function updateAuthUI() {
     logoutBtn.classList.add('hidden');
   }
 
-  // 时钟
   if (window.clockInterval) clearInterval(window.clockInterval);
-  UI.updateClock();
-  window.clockInterval = setInterval(UI.updateClock, 1000);
+  if(UI.updateClock) {
+      UI.updateClock();
+      window.clockInterval = setInterval(UI.updateClock, 1000);
+  }
 
-  // 夜间模式状态回显
   if (localStorage.getItem('darkMode') === 'true') {
       document.body.classList.add('dark-mode');
       if(toggleBtn) toggleBtn.textContent = '☀';
   }
 }
 
-// 快捷键监听
 function initShortcuts() {
     document.addEventListener('keydown', (e) => {
         if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
@@ -91,25 +87,25 @@ function initShortcuts() {
     });
 }
 
-// 初始化
 document.addEventListener('DOMContentLoaded', () => {
-  Styles.injectGlobalStyles(); // 注入 CSS
-  UI.loadPrism();
-  UI.initSnowEffect();
-  UI.initSelectionSharer();
-  UI.initReadingProgress();
+  Styles.injectGlobalStyles();
+  if(UI.loadPrism) UI.loadPrism();
+  if(UI.initSnowEffect) UI.initSnowEffect();
+  if(UI.initSelectionSharer) UI.initSelectionSharer();
+  if(UI.initReadingProgress) UI.initReadingProgress();
   
-  // 绑定全局按钮事件
-  document.getElementById('logout-btn')?.addEventListener('click', (e) => {
+  const logout = document.getElementById('logout-btn');
+  if(logout) logout.addEventListener('click', (e) => {
       e.preventDefault();
       authService.logout();
       state.isAdmin = false;
       updateAuthUI();
       router.navigate('/');
-      UI.showToast('Logged out.', 'info');
+      if(UI.showToast) UI.showToast('Logged out.', 'info');
   });
 
-  document.getElementById('dark-mode-toggle')?.addEventListener('click', (e) => {
+  const toggle = document.getElementById('dark-mode-toggle');
+  if(toggle) toggle.addEventListener('click', (e) => {
       e.preventDefault();
       const isDark = document.body.classList.toggle('dark-mode');
       localStorage.setItem('darkMode', isDark);
