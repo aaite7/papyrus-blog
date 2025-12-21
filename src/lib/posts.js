@@ -1,8 +1,6 @@
 import { supabase } from './supabase.js';
 
-
-
-  async const fixPost = (post) => {
+const fixPost = (post) => {
   if (!post) return null;
   const newPost = { ...post };
   if (typeof newPost.tags === 'string') {
@@ -13,7 +11,20 @@ import { supabase } from './supabase.js';
   return newPost;
 };
 
-getPopularPosts(limit = 5) {
+export const postsService = {
+  async getAllPosts() {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('is_pinned', { ascending: false })
+      .order('pinned_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data.map(fixPost);
+  },
+
+  async getPopularPosts(limit = 5) {
     const { data, error } = await supabase
       .from('posts')
       .select('*')
@@ -22,7 +33,7 @@ getPopularPosts(limit = 5) {
       .limit(limit);
 
     if (error) throw error;
-    return data;
+    return data.map(fixPost);
   },
 
   async getRelatedPosts(postId, tags, limit = 3) {
@@ -38,7 +49,7 @@ getPopularPosts(limit = 5) {
       .limit(limit);
 
     if (error) throw error;
-    return data;
+    return data.map(fixPost);
   },
 
   async getPostById(id) {
@@ -54,13 +65,18 @@ getPopularPosts(limit = 5) {
       await supabase.rpc('increment_view_count', { post_id: id });
     }
 
-    return data;
+    return fixPost(data);
   },
 
   async createPost(postData) {
+    const postDataToSave = { ...postData };
+    if (postDataToSave.tags && typeof postDataToSave.tags === 'string') {
+        postDataToSave.tags = postDataToSave.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+    }
+
     const { data, error } = await supabase
       .from('posts')
-      .insert([postData])
+      .insert([postDataToSave])
       .select()
       .single();
 
@@ -69,15 +85,19 @@ getPopularPosts(limit = 5) {
   },
 
   async updatePost(id, postData) {
-    console.log('Updating post:', id, postData);
-    const { data, error, status, statusText } = await supabase
+    const postDataToUpdate = { ...postData };
+    if (postDataToUpdate.tags && typeof postDataToUpdate.tags === 'string') {
+        postDataToUpdate.tags = postDataToUpdate.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+    }
+    const { data, error } = await supabase
       .from('posts')
-      .update(postData)
-      .eq('id', id);
+      .update(postDataToUpdate)
+      .eq('id', id)
+      .select()
+      .single();
 
-    console.log('Update response:', { data, error, status, statusText });
     if (error) throw error;
-    return { id, ...postData };
+    return data;
   },
 
   async togglePin(id, isPinned) {
@@ -113,7 +133,7 @@ getPopularPosts(limit = 5) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data.map(fixPost);
   },
 
   async getPostsByCategory(category) {
@@ -124,7 +144,7 @@ getPopularPosts(limit = 5) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data.map(fixPost);
   },
 
   async getPostsByTag(tag) {
@@ -135,6 +155,6 @@ getPopularPosts(limit = 5) {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
+    return data.map(fixPost);
   }
 };
