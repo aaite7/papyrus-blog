@@ -231,7 +231,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- >>> 升级版编辑器：支持快捷键和随机图片 <<< ---
+// --- >>> 升级版编辑器：支持代码样式 + 随机图片 + Tab键 <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -264,7 +264,7 @@ export async function renderEditor(APP, id, router) {
             <label style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Content (Markdown)</span>
                 <div>
-                    <span style="font-size:0.8rem; color:#888; margin-right:10px;">快捷键: Ctrl+I 插入随机图</span>
+                    <span style="font-size:0.8rem; color:#888; margin-right:10px;">快捷键: Ctrl+I 插入随机图 | Tab 缩进</span>
                     <button type="button" id="insert-img-btn" class="btn-secondary" style="padding:4px 8px; font-size:0.8rem; margin-right:5px;">🎲 Random Img</button>
                     <button type="button" id="toggle-preview-btn" class="btn-secondary" style="padding:4px 8px; font-size:0.8rem;">Switch View</button>
                 </div>
@@ -283,7 +283,7 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // --- 裁剪逻辑 (保持不变) ---
+    // --- 裁剪逻辑 ---
     let cropData = post.crop_data || null; 
     let isDrawing = false, hasSelection = false, startX = 0, startY = 0;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
@@ -338,38 +338,42 @@ export async function renderEditor(APP, id, router) {
     document.getElementById('reset-crop-btn').addEventListener('click', () => { els.box.style.display='none'; cropData=null; hasSelection=false; });
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
 
-    // --- >>> 核心功能：光标处插入图片 (封装函数) <<< ---
+    // --- >>> 核心功能：插入图片 & Tab 支持 <<< ---
+    const ta = document.getElementById('pc');
+
+    // 1. 插入随机图片逻辑
     const insertRandomImage = () => {
-        const textarea = document.getElementById('pc');
-        const cursor = textarea.selectionStart;
-        const text = textarea.value;
-        const seed = Date.now(); // 使用时间戳作为种子，确保每次图片不同
-        // 使用 Picsum Seed 模式，确保静态化后图片不变
-        const imgMarkdown = `\n![Random Image](https://picsum.photos/seed/${seed}/800/450)\n`;
-        
-        // 插入文本
-        const newText = text.slice(0, cursor) + imgMarkdown + text.slice(cursor);
-        textarea.value = newText;
-        
-        // 恢复焦点并移动光标
-        textarea.focus();
-        textarea.selectionEnd = cursor + imgMarkdown.length;
+        const cursor = ta.selectionStart;
+        const seed = Date.now();
+        const imgMd = `\n![Random Image](https://picsum.photos/seed/${seed}/800/450)\n`;
+        ta.setRangeText(imgMd, cursor, cursor, 'end'); // 使用 setRangeText 更安全
+        ta.focus();
     };
 
-    // 绑定按钮点击
+    // 2. 绑定按钮
     document.getElementById('insert-img-btn').addEventListener('click', insertRandomImage);
 
-    // 绑定快捷键 Ctrl + I
-    const ta = document.getElementById('pc'); 
+    // 3. 绑定键盘事件 (Tab & Ctrl+I)
     ta.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
-            e.preventDefault(); // 阻止浏览器默认行为
+        // Ctrl+I (Windows) or Cmd+I (Mac)
+        if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
+            e.preventDefault();
+            console.log('Ctrl+I detected, inserting image...');
             insertRandomImage();
+        }
+        
+        // Tab 键 -> 插入 4 个空格
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = ta.selectionStart;
+            const end = ta.selectionEnd;
+            // 在光标处插入4个空格
+            ta.setRangeText('    ', start, end, 'end');
         }
     });
 
-    let mode = false;
-    let debounce;
+    // 实时预览逻辑
+    let mode = false, debounce;
     document.getElementById('toggle-preview-btn').addEventListener('click', (e) => { 
         mode = !mode; 
         e.target.textContent = mode ? 'Edit Mode' : 'Preview Mode'; 
@@ -377,7 +381,6 @@ export async function renderEditor(APP, id, router) {
         document.getElementById('preview-pane').classList.toggle('hidden'); 
         if(mode) document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value)); 
     });
-    
     ta.addEventListener('input', () => { 
         if(mode) {
             clearTimeout(debounce);
