@@ -4,8 +4,6 @@ import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
 import * as Views from './lib/views.js';
 
-// 我们不引用 visuals.js，避免任何可能的冲突
-
 const APP = document.getElementById('app');
 const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
 
@@ -25,9 +23,7 @@ const router = {
   navigate(path) { window.history.pushState({}, '', path); this.route(); },
   async route() {
     const path = window.location.pathname;
-    
-    // 渲染骨架屏，带有容错检查
-    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : '<div style="padding:20px;">Loading...</div>';
+    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
     window.scrollTo(0, 0);
     
     try {
@@ -37,7 +33,6 @@ const router = {
         else if (path === '/create') state.isAdmin ? await Views.renderEditor(APP, null, this) : this.navigate('/login');
         else if (path.startsWith('/edit/')) state.isAdmin ? await Views.renderEditor(APP, path.split('/edit/')[1], this) : this.navigate('/login');
         else if (path.startsWith('/post/')) {
-            // 确保函数存在再调用
             await Views.renderPost(APP, path.split('/post/')[1], this, UI.updatePageMeta);
             if(UI.highlightCode) UI.highlightCode();
             if(UI.initReadingProgress) UI.initReadingProgress();
@@ -90,11 +85,11 @@ function initShortcuts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (Styles.injectGlobalStyles) Styles.injectGlobalStyles();
-  if (UI.loadPrism) UI.loadPrism();
-  if (UI.initSnowEffect) UI.initSnowEffect();
-  if (UI.initSelectionSharer) UI.initSelectionSharer();
-  if (UI.initReadingProgress) UI.initReadingProgress();
+  Styles.injectGlobalStyles();
+  if(UI.loadPrism) UI.loadPrism();
+  if(UI.initSnowEffect) UI.initSnowEffect();
+  if(UI.initSelectionSharer) UI.initSelectionSharer();
+  if(UI.initReadingProgress) UI.initReadingProgress();
   
   const logout = document.getElementById('logout-btn');
   if(logout) logout.addEventListener('click', (e) => {
