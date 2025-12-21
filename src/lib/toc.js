@@ -1,49 +1,41 @@
+// src/lib/toc.js
+
+// 生成目录数据结构
 export function generateTOC(content) {
-  const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-  const headings = [];
-  let match;
-
-  while ((match = headingRegex.exec(content)) !== null) {
-    const level = match[1].length;
-    const text = match[2].trim();
-    const id = text.toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-');
-
-    headings.push({ level, text, id });
-  }
-
-  return headings;
+    if (!content) return [];
+    // 匹配 #, ##, ### 标题
+    const regex = /^(#{1,3})\s+(.*)$/gm;
+    const headings = [];
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+        const level = match[1].length;
+        const text = match[2].trim();
+        // 生成简单的 ID：去除非字母数字字符，转小写
+        const id = text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/(^-|-$)/g, '');
+        headings.push({ level, text, id });
+    }
+    return headings;
 }
 
+// 给文章内容注入 ID，以便锚点跳转
 export function injectHeadingIds(htmlContent) {
-  const temp = document.createElement('div');
-  temp.innerHTML = htmlContent;
-
-  const headings = temp.querySelectorAll('h1, h2, h3');
-  headings.forEach(heading => {
-    const id = heading.textContent.toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-');
-    heading.id = id;
-  });
-
-  return temp.innerHTML;
+    if (!htmlContent) return '';
+    return htmlContent.replace(/<(h[1-3])>(.*?)<\/\1>/g, (match, tag, text) => {
+        // 清理 HTML 标签获取纯文本
+        const cleanText = text.replace(/<[^>]*>/g, ''); 
+        const id = cleanText.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/(^-|-$)/g, '');
+        return `<${tag} id="${id}">${text}</${tag}>`;
+    });
 }
 
+// 渲染目录 HTML
 export function renderTOC(headings) {
-  if (headings.length === 0) return '';
-
-  return `
-    <nav class="toc-sidebar">
-      <div class="toc-title">目录</div>
-      <ul class="toc-list">
-        ${headings.map(h => `
-          <li class="toc-item toc-level-${h.level}">
-            <a href="#${h.id}" class="toc-link">${h.text}</a>
-          </li>
-        `).join('')}
-      </ul>
-    </nav>
-  `;
+    if (!headings || headings.length === 0) return '';
+    
+    return headings.map(h => {
+        // 根据层级缩进：h1不缩进, h2缩进10px, h3缩进20px
+        const padding = (h.level - 1) * 10;
+        return `<a href="#${h.id}" style="padding-left: ${padding}px">${h.text}</a>`;
+    }).join('');
 }
