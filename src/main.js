@@ -155,21 +155,19 @@ function updateAuthUI() {
   }
 }
 
-// --- 修改后的时钟函数：增加了农历显示 ---
+// --- 时钟函数 (含农历) ---
 function updateClock() {
   const clockDisplay = document.getElementById('clock-display');
   if (!clockDisplay) return;
 
   const now = new Date();
   
-  // 1. 时间
   const timeStr = now.toLocaleTimeString('zh-CN', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   });
   
-  // 2. 公历日期
   const dateStr = now.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: 'long',
@@ -177,7 +175,6 @@ function updateClock() {
     weekday: 'long'
   });
 
-  // 3. 农历日期 (使用浏览器原生 Intl API)
   let lunarStr = '';
   try {
     lunarStr = new Intl.DateTimeFormat('zh-CN', {
@@ -186,7 +183,6 @@ function updateClock() {
       month: 'long',
       day: 'numeric'
     }).format(now);
-    // 去掉可能的公历年份数字 (如 "2025乙巳年" -> "乙巳年")，让显示更纯粹
     lunarStr = lunarStr.replace(/^\d+/, ''); 
   } catch (e) {
     console.warn('Lunar calendar not supported on this browser');
@@ -439,24 +435,37 @@ async function renderPost(id) {
     return;
   }
 
-  // >>>>>> 修复重点：加强了浏览量计数逻辑 <<<<<<
+  // >>>>>> 修复：防刷逻辑 + 浏览量计数 <<<<<<
   try {
-      // 1. 强制转换为数字，防止字符串拼接错误
-      let currentViews = parseInt(post.view_count);
-      if (isNaN(currentViews)) currentViews = 0;
+      // 1. 定义一个唯一的 key，比如 'has_viewed_post_123'
+      const storageKey = `has_viewed_post_${id}`;
       
-      const newViews = currentViews + 1;
-      
-      // 2. 本地数据立即更新 (保证你还没刷新页面时就能看到+1)
-      post.view_count = newViews; 
-      console.log(`[ViewCount] Updating local view count to ${newViews}`);
+      // 2. 检查 sessionStorage 里有没有这个记录
+      if (!sessionStorage.getItem(storageKey)) {
+          // 如果没有记录，说明本次会话还没看过，执行加 1
+          
+          let currentViews = parseInt(post.view_count);
+          if (isNaN(currentViews)) currentViews = 0;
+          
+          const newViews = currentViews + 1;
+          
+          // 本地立即更新显示
+          post.view_count = newViews; 
+          
+          // 标记为已读 (写入 sessionStorage)
+          sessionStorage.setItem(storageKey, 'true');
+          
+          console.log(`[ViewCount] First visit this session. Updating to ${newViews}`);
 
-      // 3. 发送到服务器保存
-      postsService.updatePost(id, { view_count: newViews })
-        .then(() => console.log('[ViewCount] Successfully saved to DB'))
-        .catch(err => console.error('[ViewCount] Failed to save to DB (Permission?):', err));
+          // 发送到服务器保存
+          postsService.updatePost(id, { view_count: newViews })
+            .then(() => console.log('[ViewCount] Saved to DB'))
+            .catch(err => console.error('[ViewCount] DB Error:', err));
+      } else {
+          console.log(`[ViewCount] Already viewed in this session. Not incrementing.`);
+      }
   } catch (e) {
-      console.error('[ViewCount] Error incrementing views:', e);
+      console.error('[ViewCount] Error logic:', e);
   }
   // >>>>>> 修复结束 <<<<<<
 
