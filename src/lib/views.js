@@ -5,12 +5,14 @@ import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 import { initLightbox } from './visuals.js';
 
+// --- 辅助：搜索高亮函数 ---
 function highlightText(text, query) {
     if (!query || !text) return text;
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
 }
 
+// --- 首页渲染 ---
 export async function renderHome(APP, state, router) {
   state.posts = await postsService.getAllPosts();
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
@@ -80,8 +82,9 @@ export async function renderHome(APP, state, router) {
   renderList();
 
   const searchInput = document.getElementById('search');
-  searchInput.focus(); 
-  searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+  
+  // >>> 修改点：删除了 searchInput.focus() <<<
+  // 现在进入首页不会自动弹出键盘或跳转光标了
 
   searchInput.addEventListener('input', e => { state.searchQuery = e.target.value.toLowerCase(); renderList(); });
   document.querySelectorAll('.wax-seal').forEach(seal => seal.addEventListener('click', e => {
@@ -94,6 +97,7 @@ export async function renderHome(APP, state, router) {
   }));
 }
 
+// --- 文章详情页渲染 ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
@@ -121,7 +125,6 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
   const comments = await commentsService.getCommentsByPostId(id);
 
-  // 初始化点赞数
   const likes = post.likes || 0;
   const isLiked = localStorage.getItem(`liked_${id}`);
 
@@ -171,10 +174,6 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
 
   initLightbox();
 
-  // --- 绑定悬浮岛事件 ---
-  // (去掉了滚动监听隐藏逻辑，现在是常驻)
-  
-  // 点赞
   document.getElementById('btn-like').addEventListener('click', async (e) => {
       if (localStorage.getItem(`liked_${id}`)) return alert('You already liked this!');
       const badge = document.getElementById('like-count');
@@ -185,12 +184,10 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       try { await postsService.updatePost(id, { likes: newLikes }); } catch (err) { console.error('Like failed', err); }
   });
 
-  // 分享
   document.getElementById('btn-share').addEventListener('click', () => {
       navigator.clipboard.writeText(window.location.href).then(() => alert('Link copied to clipboard! 📋'));
   });
 
-  // 回到顶部
   document.getElementById('btn-top').addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
   });
@@ -204,17 +201,6 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
           document.getElementById(l.getAttribute('href').substring(1))?.scrollIntoView({behavior:'smooth'});
       }));
   }
-
-  // 仅保留 TOC 高亮监听
-  window.addEventListener('scroll', () => {
-    if (headings.length > 0) {
-        const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id]');
-        const tocLinks = document.querySelectorAll('.toc-link');
-        let activeIndex = 0;
-        headingElements.forEach((heading, index) => { if (heading.getBoundingClientRect().top <= 100) activeIndex = index; });
-        tocLinks.forEach((link, index) => { index === activeIndex ? link.classList.add('active') : link.classList.remove('active'); });
-    }
-  });
 
   const relatedPosts = await postsService.getRelatedPosts(id, post.tags, 3);
   if (relatedPosts.length > 0) {
@@ -286,7 +272,6 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- 编辑器保持不变 ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -338,7 +323,6 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // --- 裁剪逻辑 (保持不变) ---
     let cropData = post.crop_data || null; 
     let isDrawing = false, hasSelection = false, startX = 0, startY = 0;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
@@ -395,7 +379,6 @@ export async function renderEditor(APP, id, router) {
 
     const ta = document.getElementById('pc');
 
-    // --- 插入随机图片 ---
     const insertRandomImage = () => {
         const cursor = ta.selectionStart;
         const seed = Date.now();
@@ -407,13 +390,11 @@ export async function renderEditor(APP, id, router) {
     document.getElementById('insert-img-btn').addEventListener('click', insertRandomImage);
 
     ta.addEventListener('keydown', (e) => {
-        // Ctrl+I (Windows/Linux) or Cmd+I (Mac)
         if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
             e.preventDefault();
             console.log('Ctrl+I detected');
             insertRandomImage();
         }
-        // Tab 键缩进
         if (e.key === 'Tab') {
             e.preventDefault();
             const start = ta.selectionStart;
@@ -428,7 +409,6 @@ export async function renderEditor(APP, id, router) {
         e.target.textContent = mode ? 'Edit Mode' : 'Preview Mode'; 
         document.getElementById('editor-pane').classList.toggle('split'); 
         document.getElementById('preview-pane').classList.toggle('hidden'); 
-        // >>> 预览也开启 breaks: true <<<
         if(mode) document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value, { breaks: true, gfm: true })); 
     });
     ta.addEventListener('input', () => { 
