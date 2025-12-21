@@ -21,6 +21,33 @@ const state = {
     : isNightTime()
 };
 
+// --- 新增：自动注入星星闪烁的 CSS 样式 ---
+// 这样你就不需要修改 index.html 了
+function injectStarStyles() {
+  const styleId = 'minimalist-star-styles';
+  if (document.getElementById(styleId)) return; // 避免重复注入
+
+  const style = document.createElement('style');
+  style.id = styleId;
+  style.innerHTML = `
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+        50% { opacity: 1; transform: scale(1.2) rotate(15deg); }
+    }
+    .star-icon {
+        display: inline-block;
+        color: var(--gold);
+        margin: 0 15px;
+        font-size: 1.5rem;
+        vertical-align: middle;
+        animation: twinkle 3s infinite ease-in-out;
+    }
+    .star-icon.left { animation-delay: 0s; }
+    .star-icon.right { animation-delay: 1.5s; }
+  `;
+  document.head.appendChild(style);
+}
+
 function updateAuthUI() {
   const adminLink = document.getElementById('admin-link');
   const logoutBtn = document.getElementById('logout-btn');
@@ -126,9 +153,14 @@ async function renderHome() {
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
   const tags = [...new Set(state.posts.flatMap(p => p.tags || []))];
 
+  // --- 修改点：在标题两侧加入了星星 span 标签 ---
   APP.innerHTML = `
     <div class="hero fade-in">
-      <h1>Minimalist</h1>
+      <h1>
+        <span class="star-icon left">✦</span>
+        Minimalist
+        <span class="star-icon right">✦</span>
+      </h1>
       <p class="hero-subtitle">Ancient Wisdom, Modern Stories</p>
     </div>
 
@@ -249,28 +281,28 @@ function renderPosts() {
                           max-width: none;
                           filter: sepia(0.2);"
                    onload="(function(img){
-                     const container = img.parentElement;
-                     const cropW = ${p.crop_data.width};
-                     const cropH = ${p.crop_data.height};
-                     const cropX = ${p.crop_data.x};
-                     const cropY = ${p.crop_data.y};
-                     const containerW = container.offsetWidth;
-                     const containerH = container.offsetHeight;
-                     const scaleW = containerW / cropW;
-                     const scaleH = containerH / cropH;
-                     const scale = Math.max(scaleW, scaleH);
-                     const scaledWidth = img.naturalWidth * scale;
-                     const scaledHeight = img.naturalHeight * scale;
-                     const scaledCropX = cropX * scale;
-                     const scaledCropY = cropY * scale;
-                     const scaledCropW = cropW * scale;
-                     const scaledCropH = cropH * scale;
-                     const centerX = (containerW - scaledCropW) / 2;
-                     const centerY = (containerH - scaledCropH) / 2;
-                     img.style.width = scaledWidth + 'px';
-                     img.style.height = scaledHeight + 'px';
-                     img.style.left = (-scaledCropX + centerX) + 'px';
-                     img.style.top = (-scaledCropY + centerY) + 'px';
+                      const container = img.parentElement;
+                      const cropW = ${p.crop_data.width};
+                      const cropH = ${p.crop_data.height};
+                      const cropX = ${p.crop_data.x};
+                      const cropY = ${p.crop_data.y};
+                      const containerW = container.offsetWidth;
+                      const containerH = container.offsetHeight;
+                      const scaleW = containerW / cropW;
+                      const scaleH = containerH / cropH;
+                      const scale = Math.max(scaleW, scaleH);
+                      const scaledWidth = img.naturalWidth * scale;
+                      const scaledHeight = img.naturalHeight * scale;
+                      const scaledCropX = cropX * scale;
+                      const scaledCropY = cropY * scale;
+                      const scaledCropW = cropW * scale;
+                      const scaledCropH = cropH * scale;
+                      const centerX = (containerW - scaledCropW) / 2;
+                      const centerY = (containerH - scaledCropH) / 2;
+                      img.style.width = scaledWidth + 'px';
+                      img.style.height = scaledHeight + 'px';
+                      img.style.left = (-scaledCropX + centerX) + 'px';
+                      img.style.top = (-scaledCropY + centerY) + 'px';
                    })(this)"
                    alt="${p.title}"
                    loading="lazy">
@@ -336,16 +368,16 @@ async function renderPost(id) {
                         max-width: none;
                         filter: sepia(0.15);"
                  onload="(function(img){
-                   const container = img.parentElement;
-                   const cropW = ${post.crop_data.width};
-                   const cropH = ${post.crop_data.height};
-                   const cropX = ${post.crop_data.x};
-                   const cropY = ${post.crop_data.y};
-                   const scale = container.offsetWidth / cropW;
-                   img.style.width = (img.naturalWidth * scale) + 'px';
-                   img.style.height = (img.naturalHeight * scale) + 'px';
-                   img.style.left = (-cropX * scale) + 'px';
-                   img.style.top = (-cropY * scale) + 'px';
+                    const container = img.parentElement;
+                    const cropW = ${post.crop_data.width};
+                    const cropH = ${post.crop_data.height};
+                    const cropX = ${post.crop_data.x};
+                    const cropY = ${post.crop_data.y};
+                    const scale = container.offsetWidth / cropW;
+                    img.style.width = (img.naturalWidth * scale) + 'px';
+                    img.style.height = (img.naturalHeight * scale) + 'px';
+                    img.style.left = (-cropX * scale) + 'px';
+                    img.style.top = (-cropY * scale) + 'px';
                  })(this)"
                  alt="${post.title}">
           </div>
@@ -1190,6 +1222,9 @@ function checkAutoNightMode() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // --- 新增：在这里调用样式注入函数 ---
+  injectStarStyles();
+  
   updateAuthUI();
   router.init();
 
