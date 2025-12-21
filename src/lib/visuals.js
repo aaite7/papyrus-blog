@@ -91,15 +91,20 @@ export function injectGlobalStyles() {
     /* --- 搜索高亮 --- */
     mark { background-color: rgba(212, 175, 55, 0.4); color: inherit; padding: 0 2px; border-radius: 2px; }
 
-    /* --- >>> 核心升级：悬浮操作岛 (Floating Action Bar) <<< --- */
+    /* --- >>> 核心修复：悬浮操作岛 (常驻显示) <<< --- */
     .floating-bar {
-        position: fixed; bottom: 40px; right: 40px;
-        display: flex; flex-direction: column; gap: 15px;
-        z-index: 999; opacity: 0; transform: translateY(20px);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        pointer-events: none;
+        position: fixed; 
+        bottom: 50px; 
+        right: 30px; /* 稍微靠里一点，避免贴边 */
+        display: flex; 
+        flex-direction: column; 
+        gap: 15px;
+        z-index: 99999; /* 极高的层级，确保在最上层 */
+        /* 移除 opacity: 0 和 transform，改为默认可见 */
+        opacity: 1; 
+        transform: translateY(0);
+        pointer-events: auto;
     }
-    .floating-bar.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
     
     .action-btn {
         width: 50px; height: 50px; border-radius: 50%;
@@ -114,7 +119,6 @@ export function injectGlobalStyles() {
     .action-btn:hover { transform: scale(1.1); background: var(--parchment); color: var(--burgundy); }
     .action-btn:active { transform: scale(0.95); }
     
-    /* 徽标（显示点赞数） */
     .btn-badge {
         position: absolute; top: -5px; right: -5px;
         background: var(--burgundy); color: #fff;
@@ -122,16 +126,13 @@ export function injectGlobalStyles() {
         font-family: 'Consolas', monospace; pointer-events: none;
     }
 
-    /* 点赞动画 */
     @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
     .liked { color: #e91e63 !important; border-color: #e91e63 !important; animation: heartBeat 1s; }
   `;
   document.head.appendChild(style);
 }
 
-// ... (以下所有函数保持不变，请确保完整复制) ...
-// loadPrism, highlightCode, isSnowSeason, initSnowEffect, startSnowing, ensureProgressBar, updateProgressBar, updateClock, updatePageMeta, initLightbox
-
+// ... (以下函数保持不变) ...
 export function loadPrism() { if(window.Prism)return; const l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css';document.head.appendChild(l);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';s.onload=()=>{const a=document.createElement('script');a.src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js';document.body.appendChild(a)};document.body.appendChild(s); }
 export function highlightCode() { const i=setInterval(()=>{ document.querySelectorAll('pre').forEach(p=>{ if(p.parentElement.classList.contains('code-wrapper'))return; const w=document.createElement('div');w.className='code-wrapper';p.parentNode.insertBefore(w,p);w.appendChild(p); const b=document.createElement('button');b.className='copy-btn';b.textContent='Copy Code'; b.addEventListener('click',()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.textContent='Copied!';setTimeout(()=>b.textContent='Copy Code',2000)})}); w.appendChild(b); }); if(window.Prism){window.Prism.highlightAll();clearInterval(i)} },200); setTimeout(()=>clearInterval(i),5000); }
 function isSnowSeason(){const n=new Date(),m=n.getMonth()+1,d=n.getDate();return(m===12||m===1||(m===2&&d<=10))}
