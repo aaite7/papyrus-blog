@@ -5,6 +5,7 @@ import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 import * as UI from './ui.js';
 
+// Helper
 function highlightText(text, query) {
     if (!query || !text) return text;
     const regex = new RegExp(`(${query})`, 'gi');
@@ -19,6 +20,7 @@ function renderIcon(iconStr, className = '') {
     return `<span class="${className}">${iconStr}</span>`;
 }
 
+// --- Home ---
 export async function renderHome(APP, state) {
   state.posts = await postsService.getAllPosts();
   const renderList = () => {
@@ -31,11 +33,14 @@ export async function renderHome(APP, state) {
         <div class="search-scroll"><input type="search" id="search" placeholder="Seek words..." value="${state.searchQuery || ''}"></div>
         <div class="manuscripts">${filtered.length ? filtered.map(p => `
             <div class="manuscript" data-post-id="${p.id}">
-                <div class="manuscript-header">
-                    <h2 class="manuscript-title">${renderIcon(p.icon, 'list-icon')} ${highlightText(p.title, state.searchQuery)}</h2>
-                    <div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div>
-                </div>
-                ${p.image ? `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">` : ''}
+                <div class="manuscript-header"><h2 class="manuscript-title">${renderIcon(p.icon, 'list-icon')} ${highlightText(p.title, state.searchQuery)}</h2><div class="manuscript-date">${new Date(p.created_at).toLocaleDateString('zh-CN')}</div></div>
+                ${p.image ? (p.crop_data ? `
+                    <div style="position:relative;width:100%;height:300px;overflow:hidden;border-radius:4px;margin:15px 0;box-shadow:inset 0 0 20px rgba(0,0,0,0.1);">
+                        <img src="${p.image}" style="position:absolute; object-fit: cover;
+                            width:${p.crop_data.containerW}px; height:${p.crop_data.containerH}px;
+                            left:${p.crop_data.left}px; top:${p.crop_data.top}px;" loading="lazy">
+                    </div>` 
+                    : `<img src="${p.image}" class="manuscript-image" style="object-fit:${p.image_fit||'contain'};max-height:300px;" loading="lazy">`) : ''}
                 <p class="manuscript-excerpt">${highlightText(p.content?.substring(0, 150), state.searchQuery)}...</p>
                 <div class="manuscript-footer"><span>👁 ${p.view_count||0}</span></div>
             </div>`).join('') : '<div class="empty-scroll"><h3>No manuscripts found</h3></div>'}
@@ -47,6 +52,7 @@ export async function renderHome(APP, state) {
   renderList();
 }
 
+// --- Post ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">Lost scroll...</div>'; return; }
@@ -62,6 +68,21 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const likes = post.likes || 0;
   const isLiked = localStorage.getItem(`liked_${id}`);
 
+  // 简单的裁剪回显逻辑
+  let imageHTML = '';
+  if (post.image) {
+      if (post.crop_data) {
+          // 如果有裁剪数据，模拟裁剪显示（这里简化处理，实际需要根据比例计算）
+          // 更好的方式是保存裁剪后的图片 URL，但纯前端裁剪通常保存坐标
+          // 这里我们简单展示原图，或者如果需要严格显示裁剪：
+          // 实际上首页列表已经展示了裁剪效果。详情页通常展示全图或 Cover。
+          // 为了简单，详情页我们展示完整大图，或者使用 object-fit: cover
+          imageHTML = `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:cover; width:100%; max-height:500px;"></div>`;
+      } else {
+          imageHTML = `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};"></div>`;
+      }
+  }
+
   APP.innerHTML = `
     <div id="reading-progress"></div>
     <div class="floating-bar">
@@ -73,7 +94,7 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
         ${renderIcon(post.icon, 'single-icon')}
         <h1 class="single-title">${post.title}</h1>
         <div class="single-meta">Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count||0}</div>
-        ${post.image ? `<div class="single-image-container"><img src="${post.image}" class="single-image" style="object-fit:${post.image_fit||'contain'};"></div>` : ''}
+        ${imageHTML}
         <div class="article-with-toc"><div id="toc"></div><article class="article-content">${content}</article></div>
     </div>
     <div id="comments-section"><div class="divider">✦ Comments (${comments.length}) ✦</div><div id="comments-list"></div>
@@ -130,7 +151,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- >>> 修复版：编辑器 (Editor) <<< ---
+// --- >>> 核心：编辑器 (包含强力裁剪逻辑) <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain', icon: '' };
     if(id) post = await postsService.getPostById(id);
@@ -148,11 +169,12 @@ export async function renderEditor(APP, id, router) {
           <div class="form-group"><label>Title</label><input id="pt" value="${post.title}" required></div>
           <div class="form-group"><label>Cover Image URL</label><input id="pi" value="${post.image||''}"><button type="button" class="btn-secondary" id="crop-image-btn" style="margin-top:10px;">✂ Crop Cover</button></div>
           
-          <div id="crop-container" class="image-crop-container hidden" style="overflow: auto;">
-            <div style="padding:10px;background:#fff3cd;border:1px solid var(--gold);margin-bottom:10px;">Draw box to crop</div>
-            <div id="crop-wrapper" style="position:relative;display:inline-block;"><img id="crop-image" style="display:block;max-width:100%;max-height:60vh;"><div id="crop-box" style="position:absolute;border:2px dashed #fff;box-shadow:0 0 0 999px rgba(0,0,0,0.5);display:none;"></div></div>
-            <div class="crop-controls"><button type="button" class="btn-primary" id="apply-crop-btn">Apply</button><button type="button" class="btn-secondary" id="cancel-crop-btn">Cancel</button></div>
+          <div id="crop-container" class="image-crop-container hidden">
+            <div style="color:#fff;margin-bottom:10px;">Drag to crop</div>
+            <div id="crop-wrapper"><img id="crop-image" src="" style="display:block; max-width:100%;"><div id="crop-box"></div></div>
+            <div class="crop-controls"><button type="button" class="btn-primary" id="apply-crop-btn">Apply Crop</button><button type="button" class="btn-secondary" id="cancel-crop-btn">Cancel</button></div>
           </div>
+          
           <div class="form-group"><label>Fit</label><select id="pfit"><option value="contain" ${post.image_fit==='contain'?'selected':''}>Contain</option><option value="cover" ${post.image_fit==='cover'?'selected':''}>Cover</option></select></div>
           
           <div class="form-group">
@@ -170,32 +192,104 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // Icon Logic
+    // Icon
     const iconInput = document.getElementById('picon');
     const updateIcon = () => document.getElementById('icon-preview').innerHTML = renderIcon(iconInput.value || '📝');
     iconInput.addEventListener('input', updateIcon);
     document.getElementById('random-icon-btn').addEventListener('click', () => { iconInput.value = ['🚀','💡','🔥','✨','📝','📚','🎨','💻','🪐','🌊'][Math.floor(Math.random()*10)]; updateIcon(); });
 
-    // Crop Logic
+    // >>> 裁剪逻辑 (Global Event Listeners) <<<
     let cropData = post.crop_data || null, isDrawing = false, startX, startY;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
-    els.btn.addEventListener('click', () => { const url = document.getElementById('pi').value; if(!url) return UI.showToast('No image URL', 'error'); els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display='none'; });
+    
+    els.btn.addEventListener('click', () => { 
+        const url = document.getElementById('pi').value; 
+        if(!url) return UI.showToast('Input image URL first!', 'error'); 
+        els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display='none'; 
+    });
+    
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
-    els.wrapper.onmousedown = e => { e.preventDefault(); isDrawing = true; const r = els.img.getBoundingClientRect(); startX = e.clientX - r.left; startY = e.clientY - r.top; els.box.style.left=startX+'px'; els.box.style.top=startY+'px'; els.box.style.width='0px'; els.box.style.height='0px'; els.box.style.display='block'; };
-    els.wrapper.onmousemove = e => { if(!isDrawing) return; const r = els.img.getBoundingClientRect(); const curX = Math.max(0, Math.min(e.clientX - r.left, els.img.width)); const curY = Math.max(0, Math.min(e.clientY - r.top, els.img.height)); els.box.style.width = Math.abs(curX - startX)+'px'; els.box.style.height = Math.abs(curY - startY)+'px'; els.box.style.left = (curX > startX ? startX : curX)+'px'; els.box.style.top = (curY > startY ? startY : curY)+'px'; };
-    els.wrapper.onmouseup = () => isDrawing = false;
+
+    // Mouse Down (on wrapper)
+    els.wrapper.onmousedown = e => {
+        e.preventDefault(); 
+        isDrawing = true;
+        const rect = els.img.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        
+        els.box.style.left = startX + 'px';
+        els.box.style.top = startY + 'px';
+        els.box.style.width = '0px';
+        els.box.style.height = '0px';
+        els.box.style.display = 'block';
+        
+        // Bind Move/Up to Document (Global)
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    };
+
+    const onMove = e => {
+        if (!isDrawing) return;
+        const rect = els.img.getBoundingClientRect();
+        let currX = e.clientX - rect.left;
+        let currY = e.clientY - rect.top;
+        
+        // Constraint to image bounds
+        currX = Math.max(0, Math.min(currX, rect.width));
+        currY = Math.max(0, Math.min(currY, rect.height));
+        
+        const width = Math.abs(currX - startX);
+        const height = Math.abs(currY - startY);
+        const left = Math.min(currX, startX);
+        const top = Math.min(currY, startY);
+        
+        els.box.style.width = width + 'px';
+        els.box.style.height = height + 'px';
+        els.box.style.left = left + 'px';
+        els.box.style.top = top + 'px';
+    };
+
+    const onUp = () => {
+        isDrawing = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+    };
+
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
-        const sX = els.img.naturalWidth / els.img.width, sY = els.img.naturalHeight / els.img.height;
-        cropData = { x: Math.round(parseFloat(els.box.style.left)*sX), y: Math.round(parseFloat(els.box.style.top)*sY), width: Math.round(parseFloat(els.box.style.width)*sX), height: Math.round(parseFloat(els.box.style.height)*sY) };
-        UI.showToast('Cropped!', 'success'); els.container.classList.add('hidden');
+        // 简单保存一个相对比例，或者只是保存显示区域的坐标
+        // 这里演示保存 CSS 坐标，用于列表页展示
+        // 实际项目建议后端裁剪，纯前端只能 CSS Mask
+        
+        // 为了演示效果，我们保存一个模拟数据，用于首页列表的 object-position 计算
+        // 注意：这只是一个近似值
+        const rect = els.img.getBoundingClientRect();
+        const box = els.box.getBoundingClientRect();
+        
+        // 计算缩放比例 (Natural / Rendered)
+        const scale = els.img.naturalWidth / els.img.width;
+        
+        // 保存相对于 300px 高度容器的偏移量 (Mock Logic)
+        // 实际我们保存 cropBox 的相对位置
+        cropData = {
+            // 记录截取区域相对于显示图片的百分比
+            // 简单起见，我们保存 box 的 css 数据，并在列表页用绝对定位模拟遮罩
+            left: -(parseFloat(els.box.style.left) || 0), 
+            top: -(parseFloat(els.box.style.top) || 0),
+            containerW: els.img.width, // 记录当时图片的显示宽度
+            containerH: els.img.height
+        };
+        
+        UI.showToast('Crop Applied!', 'success'); 
+        els.container.classList.add('hidden');
     });
 
-    // Editor Logic
     const ta = document.getElementById('pc');
     ta.addEventListener('keydown', e => {
         if((e.ctrlKey||e.metaKey) && e.code==='KeyI') { e.preventDefault(); const s=ta.selectionStart; ta.setRangeText(`\n![Img](https://picsum.photos/seed/${Date.now()}/800/450)\n`,s,s,'end'); }
         if(e.key==='Tab') { e.preventDefault(); const s=ta.selectionStart, en=ta.selectionEnd; ta.setRangeText('    ',s,en,'end'); }
     });
+
     let mode = false;
     document.getElementById('toggle-preview-btn').addEventListener('click', () => { 
         mode = !mode; 
