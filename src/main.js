@@ -389,7 +389,7 @@ async function renderPost(id) {
           </div>
           <div class="form-group">
             <label>Comment</label>
-            <textarea id="comment-content" rows="4" required></textarea>
+            <textarea id="comment-content" rows="2" required></textarea>
           </div>
           <button type="submit" class="btn-primary">Post Comment</button>
         </form>
@@ -519,7 +519,7 @@ function renderComments(comments) {
             <form class="reply-form" data-parent-id="${comment.id}">
               <input type="text" class="reply-name" placeholder="姓名" required style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--sepia); font-family: 'Lora', serif;">
               <input type="email" class="reply-email" placeholder="邮箱" required style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--sepia); font-family: 'Lora', serif;">
-              <textarea class="reply-content" placeholder="写下你的回复..." required rows="3" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--sepia); font-family: 'Lora', serif; resize: vertical;"></textarea>
+              <textarea class="reply-content" placeholder="写下你的回复..." required rows="2" style="width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--sepia); font-family: 'Lora', serif; resize: vertical;"></textarea>
               <div style="display: flex; gap: 8px;">
                 <button type="submit" class="btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">发送回复</button>
                 <button type="button" class="btn-cancel-reply" style="padding: 8px 16px; font-size: 0.9rem; background: #ccc; border: none; color: #333; cursor: pointer; border-radius: 4px; font-family: 'Lora', serif;">取消</button>
