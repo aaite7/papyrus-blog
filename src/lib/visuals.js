@@ -82,35 +82,55 @@ export function injectGlobalStyles() {
     .article-content table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; margin: 1.5em 0; }
     .article-content th, .article-content td { border: 1px solid var(--sepia); padding: 8px 12px; }
 
-    /* --- >>> 核心升级：灯箱效果 (Lightbox) <<< --- */
-    .lightbox-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9); z-index: 2147483647;
-        display: flex; justify-content: center; align-items: center;
-        opacity: 0; transition: opacity 0.3s; pointer-events: none;
-    }
+    /* --- 灯箱效果 --- */
+    .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2147483647; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
-    .lightbox-img {
-        max-width: 95%; max-height: 95%;
-        border: 2px solid var(--gold);
-        box-shadow: 0 0 30px rgba(0,0,0,0.5);
-        transform: scale(0.9); transition: transform 0.3s;
-    }
+    .lightbox-img { max-width: 95%; max-height: 95%; border: 2px solid var(--gold); box-shadow: 0 0 30px rgba(0,0,0,0.5); transform: scale(0.9); transition: transform 0.3s; }
     .lightbox-overlay.active .lightbox-img { transform: scale(1); }
 
-    /* --- >>> 核心升级：搜索高亮 <<< --- */
-    mark {
-        background-color: rgba(212, 175, 55, 0.4); /* 金色高亮 */
-        color: inherit;
-        padding: 0 2px;
-        border-radius: 2px;
+    /* --- 搜索高亮 --- */
+    mark { background-color: rgba(212, 175, 55, 0.4); color: inherit; padding: 0 2px; border-radius: 2px; }
+
+    /* --- >>> 核心升级：悬浮操作岛 (Floating Action Bar) <<< --- */
+    .floating-bar {
+        position: fixed; bottom: 40px; right: 40px;
+        display: flex; flex-direction: column; gap: 15px;
+        z-index: 999; opacity: 0; transform: translateY(20px);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        pointer-events: none;
     }
+    .floating-bar.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    
+    .action-btn {
+        width: 50px; height: 50px; border-radius: 50%;
+        background: var(--cream); color: var(--sepia);
+        border: 2px solid var(--gold);
+        display: flex; justify-content: center; align-items: center;
+        font-size: 1.2rem; cursor: pointer;
+        box-shadow: 0 4px 12px var(--shadow);
+        transition: all 0.2s; position: relative;
+    }
+    
+    .action-btn:hover { transform: scale(1.1); background: var(--parchment); color: var(--burgundy); }
+    .action-btn:active { transform: scale(0.95); }
+    
+    /* 徽标（显示点赞数） */
+    .btn-badge {
+        position: absolute; top: -5px; right: -5px;
+        background: var(--burgundy); color: #fff;
+        font-size: 0.7rem; padding: 2px 6px; border-radius: 10px;
+        font-family: 'Consolas', monospace; pointer-events: none;
+    }
+
+    /* 点赞动画 */
+    @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
+    .liked { color: #e91e63 !important; border-color: #e91e63 !important; animation: heartBeat 1s; }
   `;
   document.head.appendChild(style);
 }
 
-// ... (以下函数保持不变: loadPrism, highlightCode, isSnowSeason, initSnowEffect, startSnowing, ensureProgressBar, updateProgressBar, updateClock, updatePageMeta) ...
-// 为了方便你复制，我这里只列出新增的函数，请把它们加到文件末尾或保留原有的
+// ... (以下所有函数保持不变，请确保完整复制) ...
+// loadPrism, highlightCode, isSnowSeason, initSnowEffect, startSnowing, ensureProgressBar, updateProgressBar, updateClock, updatePageMeta, initLightbox
 
 export function loadPrism() { if(window.Prism)return; const l=document.createElement('link');l.rel='stylesheet';l.href='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css';document.head.appendChild(l);const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js';s.onload=()=>{const a=document.createElement('script');a.src='https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js';document.body.appendChild(a)};document.body.appendChild(s); }
 export function highlightCode() { const i=setInterval(()=>{ document.querySelectorAll('pre').forEach(p=>{ if(p.parentElement.classList.contains('code-wrapper'))return; const w=document.createElement('div');w.className='code-wrapper';p.parentNode.insertBefore(w,p);w.appendChild(p); const b=document.createElement('button');b.className='copy-btn';b.textContent='Copy Code'; b.addEventListener('click',()=>{navigator.clipboard.writeText(p.innerText).then(()=>{b.textContent='Copied!';setTimeout(()=>b.textContent='Copy Code',2000)})}); w.appendChild(b); }); if(window.Prism){window.Prism.highlightAll();clearInterval(i)} },200); setTimeout(()=>clearInterval(i),5000); }
@@ -121,36 +141,4 @@ function ensureProgressBar(){let b=document.getElementById('reading-progress');i
 export function updateProgressBar(){if(!window.location.pathname.startsWith('/post/')){const b=document.getElementById('reading-progress');if(b)b.style.width='0%';return}const b=ensureProgressBar(),s=window.scrollY||document.documentElement.scrollTop,h=document.documentElement.scrollHeight-window.innerHeight;b.style.width=(h>0?(s/h)*100:0)+'%'}
 export function updateClock(){const d=document.getElementById('clock-display');if(!d)return;const n=new Date();let l='';try{l=new Intl.DateTimeFormat('zh-CN',{calendar:'chinese',year:'numeric',month:'long',day:'numeric'}).format(n).replace(/^\d+/,'')}catch(e){}d.innerHTML=`<div style="font-size: 1rem; font-weight: 600;">${n.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div><div style="font-size: 0.85rem; opacity: 0.8;">${n.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})}</div>${l?`<div style="font-size: 0.75rem; opacity: 0.6; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${l}</div>`:''}`}
 export function updatePageMeta(p){document.title=`${p.title} - Minimalist`;let m=document.querySelector('meta[name="description"]');if(!m){m=document.createElement('meta');m.name='description';document.head.appendChild(m)}m.content=p.content?.substring(0,160)||'Read this post on Minimalist blog'}
-
-// --- >>> 核心功能：初始化灯箱 <<< ---
-export function initLightbox() {
-    // 1. 查找文章内的所有图片
-    const images = document.querySelectorAll('.article-content img');
-    if (images.length === 0) return;
-
-    // 2. 创建或获取 Overlay
-    let overlay = document.querySelector('.lightbox-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'lightbox-overlay';
-        overlay.innerHTML = '<img class="lightbox-img" src="">';
-        document.body.appendChild(overlay);
-        
-        // 点击遮罩层关闭
-        overlay.addEventListener('click', () => {
-            overlay.classList.remove('active');
-        });
-    }
-
-    const imgElement = overlay.querySelector('img');
-
-    // 3. 绑定点击事件
-    images.forEach(img => {
-        img.style.cursor = 'zoom-in';
-        img.addEventListener('click', (e) => {
-            e.stopPropagation(); // 防止冒泡
-            imgElement.src = img.src; // 设置大图源
-            overlay.classList.add('active'); // 显示
-        });
-    });
-}
+export function initLightbox() { const i=document.querySelectorAll('.article-content img');if(i.length===0)return;let o=document.querySelector('.lightbox-overlay');if(!o){o=document.createElement('div');o.className='lightbox-overlay';o.innerHTML='<img class="lightbox-img" src="">';document.body.appendChild(o);o.addEventListener('click',()=>{o.classList.remove('active')})}const e=o.querySelector('img');i.forEach(m=>{m.style.cursor='zoom-in';m.addEventListener('click',x=>{x.stopPropagation();e.src=m.src;o.classList.add('active')})}) }
