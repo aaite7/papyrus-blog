@@ -1,5 +1,6 @@
 // src/lib/ui.js
 
+// 1. 骨架屏
 export function renderSkeleton() {
     const card = `
         <div class="skeleton-card">
@@ -16,6 +17,7 @@ export function renderSkeleton() {
     `;
 }
 
+// 2. Toast 通知
 export function showToast(message, type = 'info') {
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -32,34 +34,49 @@ export function showToast(message, type = 'info') {
     setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
 }
 
+// 3. 阅读进度条
 export function initReadingProgress() {
     let bar = document.getElementById('reading-progress');
-    if (!bar) { bar = document.createElement('div'); bar.id = 'reading-progress'; document.body.appendChild(bar); }
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'reading-progress';
+        document.body.appendChild(bar);
+    }
+    
     const update = () => {
-        if (!window.location.pathname.startsWith('/post/')) { bar.style.width = '0%'; return; }
-        const h = document.documentElement;
-        const b = document.body;
-        const st = 'scrollTop';
-        const sh = 'scrollHeight';
-        const percent = (h[st]||b[st]) / ((h[sh]||b[sh]) - h.clientHeight) * 100;
-        bar.style.width = percent + '%';
+        // 只在文章详情页显示
+        if (!window.location.pathname.startsWith('/post/')) {
+            bar.style.width = '0%';
+            return;
+        }
+        
+        const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = (winScroll / height) * 100;
+        
+        bar.style.width = scrolled + '%';
     };
-    document.addEventListener('scroll', update);
+    
+    document.addEventListener('scroll', update, { passive: true });
+    // 初始化执行一次
     update();
 }
 
+// 4. 划词分享
 export function initSelectionSharer() {
     let p = document.getElementById('selection-popover');
     if (!p) {
         p = document.createElement('div'); p.id = 'selection-popover'; p.className = 'selection-popover';
         p.innerHTML = `<button class="popover-btn" id="pop-copy">Copy</button>`;
         document.body.appendChild(p);
+        
         document.getElementById('pop-copy').addEventListener('click', () => {
             navigator.clipboard.writeText(window.getSelection().toString());
             p.classList.remove('visible');
             showToast('Copied!');
         });
     }
+    
     document.addEventListener('mouseup', () => {
         const s = window.getSelection().toString().trim();
         if (s) {
@@ -73,9 +90,11 @@ export function initSelectionSharer() {
     });
 }
 
+// 5. 灯箱 (图片放大)
 export function initLightbox() {
     const imgs = document.querySelectorAll('.article-content img');
     if(!imgs.length) return;
+    
     let overlay = document.querySelector('.lightbox-overlay');
     if(!overlay) {
         overlay = document.createElement('div'); overlay.className = 'lightbox-overlay';
@@ -83,7 +102,9 @@ export function initLightbox() {
         document.body.appendChild(overlay);
         overlay.addEventListener('click', () => overlay.classList.remove('active'));
     }
+    
     imgs.forEach(img => {
+        img.style.cursor = 'zoom-in';
         img.addEventListener('click', (e) => {
             e.stopPropagation();
             overlay.querySelector('img').src = img.src;
@@ -92,9 +113,10 @@ export function initLightbox() {
     });
 }
 
-export function loadPrism() { /* 简化版占位，防止报错 */ }
-export function highlightCode() { /* 简化版占位 */ }
-export function initSnowEffect() { /* 简化版占位 */ }
+// 6. 其他工具函数
+export function loadPrism() {} 
+export function highlightCode() {}
+export function initSnowEffect() {}
 export function updateClock() {
     const d = document.getElementById('clock-display');
     if(d) d.innerText = new Date().toLocaleTimeString();
