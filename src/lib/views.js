@@ -106,8 +106,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   const content = DOMPurify.sanitize(marked.parse(post.content || ''));
   const comments = await commentsService.getCommentsByPostId(id);
 
+  // 删除原有的 id="reading-progress" div，因为现在是全局注入
   APP.innerHTML = `
-    <div id="reading-progress"></div>
     <div class="single-manuscript fade-in">
       <h1 class="single-title">${post.title}</h1>
       <div class="single-meta">
@@ -151,14 +151,8 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
       }));
   }
 
+  // 仅保留 TOC 高亮监听，进度条逻辑已移至 main.js 全局调用
   window.addEventListener('scroll', () => {
-    const progressBar = document.getElementById('reading-progress');
-    if (progressBar) {
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollPercent = (scrollTop / docHeight) * 100;
-        progressBar.style.width = scrollPercent + '%';
-    }
     if (headings.length > 0) {
         const headingElements = document.querySelectorAll('h1[id], h2[id], h3[id]');
         const tocLinks = document.querySelectorAll('.toc-link');
@@ -238,7 +232,6 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- >>> 修复：裁剪图片样式，防止溢出 <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -285,9 +278,8 @@ export async function renderEditor(APP, id, router) {
         if(!url) return alert('Input URL first'); 
         els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display = 'none'; hasSelection = false; 
         els.img.onload = () => { 
-            // 恢复已有裁剪框的显示逻辑
             if(cropData) { 
-                const scaleX = els.img.width / els.img.naturalWidth; // 注意：使用当前显示宽度/原始宽度
+                const scaleX = els.img.width / els.img.naturalWidth;
                 const scaleY = els.img.height / els.img.naturalHeight;
                 els.box.style.left = (cropData.x * scaleX)+'px'; 
                 els.box.style.top = (cropData.y * scaleY)+'px'; 
@@ -308,7 +300,6 @@ export async function renderEditor(APP, id, router) {
     els.wrapper.onmousemove = (e) => { 
         if(!isDrawing) return; e.preventDefault(); 
         const rect = els.img.getBoundingClientRect(); 
-        // 限制框选范围在图片可视区域内
         const curX = Math.max(0, Math.min(e.clientX - rect.left, els.img.width)); 
         const curY = Math.max(0, Math.min(e.clientY - rect.top, els.img.height)); 
         els.box.style.width = Math.abs(curX - startX)+'px'; els.box.style.height = Math.abs(curY - startY)+'px'; 
@@ -318,10 +309,8 @@ export async function renderEditor(APP, id, router) {
     
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
         if(!hasSelection) return alert('Please select area'); 
-        // 计算缩放比例：原始尺寸 / 显示尺寸
         const scaleX = els.img.naturalWidth / els.img.width;
         const scaleY = els.img.naturalHeight / els.img.height;
-        
         cropData = { 
             x: Math.round(parseFloat(els.box.style.left) * scaleX), 
             y: Math.round(parseFloat(els.box.style.top) * scaleY), 
