@@ -53,9 +53,9 @@ const router = {
       } else if (path.startsWith('/post/')) {
           await Views.renderPost(APP, path.split('/post/')[1], this, Visuals.updatePageMeta);
           
-          // 渲染后立即触发一次高亮和进度条检查
+          // 渲染后触发
           Visuals.highlightCode(); 
-          Visuals.updateProgressBar();
+          // 这里不再需要手动 updateProgressBar，因为 initReadingProgress 已经设置了自动监听
           
       } else {
           APP.innerHTML = '<div class="error">404: Scroll not found</div>';
@@ -87,26 +87,22 @@ function updateAuthUI() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. 注入所有全局样式
+  // 1. 注入样式
   Visuals.injectGlobalStyles();
   
-  // 2. 加载第三方库
+  // 2. 加载库
   Visuals.loadPrism(); 
   
-  // 3. 启动定时器和特效
+  // 3. 启动特效
   Visuals.updateClock();
   setInterval(Visuals.updateClock, 1000);
   Visuals.initSnowEffect();
   
-  // >>> 核心升级：启动划词分享功能 <<<
+  // 4. 启动交互组件 (划词分享 & 阅读进度条)
   Visuals.initSelectionSharer();
+  Visuals.initReadingProgress(); // >>> 这里调用新的初始化函数
 
-  // 4. 监听滚动 (用于阅读进度条)
-  window.addEventListener('scroll', () => {
-      Visuals.updateProgressBar();
-  });
-
-  // 5. 绑定导航栏按钮
+  // 5. 绑定全局按钮
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
       authService.logout();
