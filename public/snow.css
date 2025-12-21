@@ -6,13 +6,13 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: -1; /* Places snow behind nav content */
+  z-index: 0; /* Positioned within nav, but behind content */
   overflow: hidden;
 }
 
 .snowflake {
   position: absolute;
-  top: -10px; /* Start just above the container */
+  top: -15px; /* Start above the container */
   color: var(--sepia); /* Use a visible theme color */
   opacity: 0.6;
   user-select: none;
@@ -22,14 +22,13 @@
   text-shadow: 0 0 2px rgba(0,0,0,0.1);
 }
 
-/* This is a fallback, the JS creates specific animations, 
-   but we'll make it work for the nav height. */
+/* Fallback animation in case JS-injected keyframes fail */
 @keyframes fall {
   from {
     transform: translateY(0);
   }
   to {
-    /* 100% of the parent (#snow-container), which is 100% of <nav> */
-    transform: translateY(100%); 
+    /* The JS will calculate the correct height dynamically */
+    transform: translateY(100px); 
   }
 }
