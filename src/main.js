@@ -3,7 +3,8 @@ import { authService } from './lib/auth.js';
 import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
 import * as Views from './lib/views.js';
-// 不要 import visuals.js，或者保留它也没关系，因为现在它是哑巴文件了
+
+// 我们不引用 visuals.js，避免任何可能的冲突
 
 const APP = document.getElementById('app');
 const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
@@ -25,8 +26,8 @@ const router = {
   async route() {
     const path = window.location.pathname;
     
-    // 渲染骨架屏
-    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
+    // 渲染骨架屏，带有容错检查
+    APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : '<div style="padding:20px;">Loading...</div>';
     window.scrollTo(0, 0);
     
     try {
@@ -36,6 +37,7 @@ const router = {
         else if (path === '/create') state.isAdmin ? await Views.renderEditor(APP, null, this) : this.navigate('/login');
         else if (path.startsWith('/edit/')) state.isAdmin ? await Views.renderEditor(APP, path.split('/edit/')[1], this) : this.navigate('/login');
         else if (path.startsWith('/post/')) {
+            // 确保函数存在再调用
             await Views.renderPost(APP, path.split('/post/')[1], this, UI.updatePageMeta);
             if(UI.highlightCode) UI.highlightCode();
             if(UI.initReadingProgress) UI.initReadingProgress();
@@ -88,11 +90,11 @@ function initShortcuts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  Styles.injectGlobalStyles();
-  if(UI.loadPrism) UI.loadPrism();
-  if(UI.initSnowEffect) UI.initSnowEffect();
-  if(UI.initSelectionSharer) UI.initSelectionSharer();
-  if(UI.initReadingProgress) UI.initReadingProgress();
+  if (Styles.injectGlobalStyles) Styles.injectGlobalStyles();
+  if (UI.loadPrism) UI.loadPrism();
+  if (UI.initSnowEffect) UI.initSnowEffect();
+  if (UI.initSelectionSharer) UI.initSelectionSharer();
+  if (UI.initReadingProgress) UI.initReadingProgress();
   
   const logout = document.getElementById('logout-btn');
   if(logout) logout.addEventListener('click', (e) => {
