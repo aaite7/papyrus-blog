@@ -2,28 +2,26 @@
 import { supabase } from './supabase.js';
 
 export const postsService = {
-  // 1. 获取文章 (>>> 核心修复：先按置顶排序，再按时间 <<<)
+  // 1. 获取文章 (>>> 核心修复：置顶优先 <<<)
   async getAllPosts() {
     const { data, error } = await supabase
       .from('posts')
       .select('*')
-      .order('is_pinned', { ascending: false }) // 1. 置顶优先
-      .order('created_at', { ascending: false }); // 2. 时间倒序
+      .order('is_pinned', { ascending: false }) // 置顶的排前面
+      .order('created_at', { ascending: false }); // 然后按时间倒序
     if (error) throw error;
     return data;
   },
 
   async getPostById(id) {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const { data, error } = await supabase.from('posts').select('*').eq('id', id).single();
     if (error) return null;
     return data;
   },
 
+  // 2. 创建 (支持置顶字段)
   async createPost(postData) {
+    // 解构出所有字段，防止漏传
     const { title, content, image, category, tags, is_draft, image_fit, crop_data, icon } = postData;
     const { data, error } = await supabase
       .from('posts')
