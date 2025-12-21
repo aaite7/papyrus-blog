@@ -4,7 +4,7 @@ import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import { authService } from './auth.js';
 
-// --- 首页渲染 (保持不变) ---
+// --- 首页渲染 ---
 export async function renderHome(APP, state, router) {
   state.posts = await postsService.getAllPosts();
   const categories = [...new Set(state.posts.map(p => p.category).filter(Boolean))];
@@ -78,7 +78,7 @@ export async function renderHome(APP, state, router) {
   }));
 }
 
-// --- 文章详情页渲染 (保持不变) ---
+// --- 文章详情页渲染 ---
 export async function renderPost(APP, id, router, updateMetaCallback) {
   const post = await postsService.getPostById(id);
   if (!post) { APP.innerHTML = '<div class="error">This manuscript has been lost...</div>'; return; }
@@ -219,7 +219,6 @@ function renderCommentsList(comments) {
     }));
 }
 
-// --- 简单封装 (Login & Admin) ---
 export function renderLogin(APP, router) {
     APP.innerHTML = `<div class="form-container"><h2 class="form-title">Login</h2><form id="login-form"><input type="email" id="le" placeholder="Email" required><input type="password" id="lp" placeholder="Password" required><button type="submit" class="btn-primary" style="width:100%;margin-top:20px;">Sign In</button></form></div>`;
     document.getElementById('login-form').addEventListener('submit', async e => {
@@ -239,7 +238,7 @@ export async function renderAdmin(APP, router) {
     }));
 }
 
-// --- >>> 重点修改：恢复了完整的图片裁剪逻辑的 RenderEditor <<< ---
+// --- >>> 修复：裁剪图片样式，防止溢出 <<< ---
 export async function renderEditor(APP, id, router) {
     let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain' };
     if(id) post = await postsService.getPostById(id);
@@ -254,15 +253,21 @@ export async function renderEditor(APP, id, router) {
             <input id="pi" value="${post.image||''}">
             <button type="button" class="btn-secondary" id="crop-image-btn" style="margin-top:10px;">裁剪图片</button>
           </div>
-          <div id="crop-container" class="image-crop-container hidden">
+          <div id="crop-container" class="image-crop-container hidden" style="overflow: auto;">
             <div style="padding:10px;background:#fff3cd;border:1px solid var(--gold);margin-bottom:15px;"><strong>📝 说明：</strong>在图片上按住鼠标拖动来框选区域</div>
-            <div id="crop-wrapper"><img id="crop-image"><div id="crop-box"></div></div>
+            
+            <div id="crop-wrapper" style="position:relative;display:inline-block; border:2px solid var(--gold);">
+                <img id="crop-image" style="display:block; max-width: 100%; max-height: 60vh; width: auto; height: auto; cursor:crosshair; user-select:none;">
+                <div id="crop-box" style="position:absolute; border:2px dashed #8B0000; box-shadow:0 0 0 9999px rgba(0,0,0,0.5); display:none; pointer-events:none; z-index:10;"></div>
+            </div>
+
             <div class="crop-controls">
               <button type="button" class="btn-primary" id="apply-crop-btn">✓ 应用</button>
               <button type="button" class="btn-secondary" id="reset-crop-btn">↻ 重置</button>
               <button type="button" class="btn-secondary" id="cancel-crop-btn">✕ 取消</button>
             </div>
           </div>
+          
           <div class="form-group"><label>Fit</label><select id="pfit"><option value="contain" ${post.image_fit==='contain'?'selected':''}>Full</option><option value="cover" ${post.image_fit==='cover'?'selected':''}>Cropped</option></select></div>
           <div class="form-group"><label>Content</label><textarea id="pc" style="min-height:300px;" required>${post.content||''}</textarea></div>
           <div class="form-group"><label>Category</label><input id="pcat" value="${post.category}"></div>
@@ -271,25 +276,29 @@ export async function renderEditor(APP, id, router) {
         </form>
       </div>`;
     
-    // 裁剪逻辑变量
     let cropData = post.crop_data || null; 
     let isDrawing = false, hasSelection = false, startX = 0, startY = 0;
     const els = { btn: document.getElementById('crop-image-btn'), container: document.getElementById('crop-container'), wrapper: document.getElementById('crop-wrapper'), img: document.getElementById('crop-image'), box: document.getElementById('crop-box') };
     
-    // 加载图片
     els.btn.addEventListener('click', () => { 
         const url = document.getElementById('pi').value; 
         if(!url) return alert('Input URL first'); 
         els.img.src = url; els.container.classList.remove('hidden'); els.box.style.display = 'none'; hasSelection = false; 
         els.img.onload = () => { 
+            // 恢复已有裁剪框的显示逻辑
             if(cropData) { 
-                const scaleX = els.img.width/cropData.width, scaleY = els.img.height/cropData.height; 
-                els.box.style.left = (cropData.x*scaleX)+'px'; els.box.style.top = (cropData.y*scaleY)+'px'; els.box.style.width = (cropData.width*scaleX)+'px'; els.box.style.height = (cropData.height*scaleY)+'px'; els.box.style.display = 'block'; hasSelection = true; 
+                const scaleX = els.img.width / els.img.naturalWidth; // 注意：使用当前显示宽度/原始宽度
+                const scaleY = els.img.height / els.img.naturalHeight;
+                els.box.style.left = (cropData.x * scaleX)+'px'; 
+                els.box.style.top = (cropData.y * scaleY)+'px'; 
+                els.box.style.width = (cropData.width * scaleX)+'px'; 
+                els.box.style.height = (cropData.height * scaleY)+'px'; 
+                els.box.style.display = 'block'; 
+                hasSelection = true; 
             } 
         }; 
     });
 
-    // 鼠标画框事件
     els.wrapper.onmousedown = (e) => { 
         if(hasSelection) return; e.preventDefault(); isDrawing = true; 
         const rect = els.img.getBoundingClientRect(); 
@@ -299,6 +308,7 @@ export async function renderEditor(APP, id, router) {
     els.wrapper.onmousemove = (e) => { 
         if(!isDrawing) return; e.preventDefault(); 
         const rect = els.img.getBoundingClientRect(); 
+        // 限制框选范围在图片可视区域内
         const curX = Math.max(0, Math.min(e.clientX - rect.left, els.img.width)); 
         const curY = Math.max(0, Math.min(e.clientY - rect.top, els.img.height)); 
         els.box.style.width = Math.abs(curX - startX)+'px'; els.box.style.height = Math.abs(curY - startY)+'px'; 
@@ -306,17 +316,24 @@ export async function renderEditor(APP, id, router) {
     };
     els.wrapper.onmouseup = () => { isDrawing = false; if(parseFloat(els.box.style.width)>10) hasSelection = true; else els.box.style.display = 'none'; };
     
-    // 按钮事件
     document.getElementById('apply-crop-btn').addEventListener('click', () => { 
         if(!hasSelection) return alert('Please select area'); 
+        // 计算缩放比例：原始尺寸 / 显示尺寸
         const scaleX = els.img.naturalWidth / els.img.width;
-        cropData = { x: Math.round(parseFloat(els.box.style.left)*scaleX), y: Math.round(parseFloat(els.box.style.top)*scaleX), width: Math.round(parseFloat(els.box.style.width)*scaleX), height: Math.round(parseFloat(els.box.style.height)*scaleX) };
+        const scaleY = els.img.naturalHeight / els.img.height;
+        
+        cropData = { 
+            x: Math.round(parseFloat(els.box.style.left) * scaleX), 
+            y: Math.round(parseFloat(els.box.style.top) * scaleY), 
+            width: Math.round(parseFloat(els.box.style.width) * scaleX), 
+            height: Math.round(parseFloat(els.box.style.height) * scaleY) 
+        };
         alert('Crop Saved!'); els.container.classList.add('hidden');
     });
+    
     document.getElementById('reset-crop-btn').addEventListener('click', () => { els.box.style.display='none'; cropData=null; hasSelection=false; });
     document.getElementById('cancel-crop-btn').addEventListener('click', () => els.container.classList.add('hidden'));
 
-    // 保存逻辑
     const save = async (draft) => {
         const data = { title: document.getElementById('pt').value, content: document.getElementById('pc').value, image: document.getElementById('pi').value, image_fit: document.getElementById('pfit').value, category: document.getElementById('pcat').value, tags: document.getElementById('ptags').value.split(',').filter(Boolean), crop_data: cropData, is_draft: draft };
         if(id) await postsService.updatePost(id, data); else await postsService.createPost(data);
