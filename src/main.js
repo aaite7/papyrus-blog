@@ -439,17 +439,26 @@ async function renderPost(id) {
     return;
   }
 
+  // >>>>>> 修复重点：加强了浏览量计数逻辑 <<<<<<
   try {
-      const currentViews = post.view_count || 0;
-      const newViews = currentViews + 1;
-      post.view_count = newViews; 
+      // 1. 强制转换为数字，防止字符串拼接错误
+      let currentViews = parseInt(post.view_count);
+      if (isNaN(currentViews)) currentViews = 0;
       
-      postsService.updatePost(id, { view_count: newViews }).catch(err => {
-          console.warn('Background view count update failed:', err);
-      });
+      const newViews = currentViews + 1;
+      
+      // 2. 本地数据立即更新 (保证你还没刷新页面时就能看到+1)
+      post.view_count = newViews; 
+      console.log(`[ViewCount] Updating local view count to ${newViews}`);
+
+      // 3. 发送到服务器保存
+      postsService.updatePost(id, { view_count: newViews })
+        .then(() => console.log('[ViewCount] Successfully saved to DB'))
+        .catch(err => console.error('[ViewCount] Failed to save to DB (Permission?):', err));
   } catch (e) {
-      console.error('Error incrementing views:', e);
+      console.error('[ViewCount] Error incrementing views:', e);
   }
+  // >>>>>> 修复结束 <<<<<<
 
   const allPosts = await postsService.getAllPosts();
   const publishedPosts = allPosts.filter(p => !p.is_draft);
@@ -473,7 +482,7 @@ async function renderPost(id) {
       <h1 class="single-title">${post.title}</h1>
       <div class="single-meta">
         <div class="single-meta-line">
-          Scribed on ${formattedDate} • 👁 ${post.view_count || 0} views
+          Scribed on ${formattedDate} • 👁 ${post.view_count} views
         </div>
       </div>
       ${post.image ? (post.crop_data ? `
