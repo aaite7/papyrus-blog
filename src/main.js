@@ -4,7 +4,6 @@ import * as Views from './lib/views.js';
 
 const APP = document.getElementById('app');
 
-// 状态管理
 const state = {
   isAdmin: authService.isAuthenticated(),
   searchQuery: '',
@@ -13,18 +12,15 @@ const state = {
   darkMode: localStorage.getItem('darkMode') === 'true'
 };
 
-// 路由管理
 const router = {
   init() {
     window.addEventListener('popstate', () => this.route());
-    // 全局点击拦截
     document.body.addEventListener('click', e => {
       const link = e.target.closest('[data-link]');
       if (link) {
         e.preventDefault();
         this.navigate(link.dataset.link || link.getAttribute('href'));
       }
-      // 卡片点击
       const card = e.target.closest('[data-post-id]');
       if (card && !e.target.closest('button')) {
         this.navigate(`/post/${card.dataset.postId}`);
@@ -56,6 +52,10 @@ const router = {
           state.isAdmin ? await Views.renderEditor(APP, path.split('/edit/')[1], this) : this.navigate('/login');
       } else if (path.startsWith('/post/')) {
           await Views.renderPost(APP, path.split('/post/')[1], this, Visuals.updatePageMeta);
+          
+          // >>> 关键点：页面渲染完后，触发高亮函数 <<<
+          Visuals.highlightCode(); 
+          
       } else {
           APP.innerHTML = '<div class="error">404: Scroll not found</div>';
       }
@@ -66,7 +66,6 @@ const router = {
   }
 };
 
-// UI更新逻辑
 function updateAuthUI() {
   const adminLink = document.getElementById('admin-link');
   const logoutBtn = document.getElementById('logout-btn');
@@ -80,32 +79,26 @@ function updateAuthUI() {
     logoutBtn.classList.add('hidden');
   }
 
-  // 夜间模式初始状态
   if (state.darkMode) {
       document.body.classList.add('dark-mode');
       if(toggleBtn) toggleBtn.textContent = '☀';
   }
 }
 
-// 绑定全局事件
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. 注入样式
   Visuals.injectGlobalStyles();
   
-  // 2. 启动时钟
+  // >>> 关键点：启动时预加载高亮库 <<<
+  Visuals.loadPrism(); 
+  
   Visuals.updateClock();
   setInterval(Visuals.updateClock, 1000);
-
-  // 3. 启动特效
   Visuals.initSnowEffect();
 
-  // 4. 监听滚动 (用于 TOC 高亮和阅读进度条)
   window.addEventListener('scroll', () => {
       Visuals.updateProgressBar();
-      // 这里如果需要 TOC 高亮逻辑，也可以封装到 Visuals 里，或者保持简单
   });
 
-  // 5. 绑定导航栏按钮
   document.getElementById('logout-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
       authService.logout();
@@ -122,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.target.textContent = state.darkMode ? '☀' : '☾';
   });
 
-  // 6. 初始化 UI 和 路由
   updateAuthUI();
   router.init();
 });
