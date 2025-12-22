@@ -31,7 +31,7 @@ const router = {
     try {
         if (path === '/') {
             await Views.renderHome(APP, state);
-            // >>> 核心修复：等首页画完，立刻启动下雪特效 <<<
+            // 启动下雪
             if (UI.initSnowEffect) UI.initSnowEffect();
         }
         else if (path === '/login') Views.renderLogin(APP, this);
@@ -40,7 +40,6 @@ const router = {
         else if (path.startsWith('/edit/')) state.isAdmin ? await Views.renderEditor(APP, path.split('/edit/')[1], this) : this.navigate('/login');
         else if (path.startsWith('/post/')) {
             await Views.renderPost(APP, path.split('/post/')[1], this, UI.updatePageMeta);
-            // 文章页不需要下雪，但需要高亮代码和进度条
             if(UI.highlightCode) UI.highlightCode();
             if(UI.initReadingProgress) UI.initReadingProgress();
         }
@@ -94,11 +93,12 @@ function initShortcuts() {
 document.addEventListener('DOMContentLoaded', () => {
   Styles.injectGlobalStyles();
   if(UI.loadPrism) UI.loadPrism();
-  // 注意：这里不再调用 initSnowEffect，因为这时候页面还是空的
-  // 我们把它移到了上面的 route() 方法里
   if(UI.initSelectionSharer) UI.initSelectionSharer();
   if(UI.initReadingProgress) UI.initReadingProgress();
   
+  // >>> 核心：启动天气查询 <<<
+  if(UI.initWeather) UI.initWeather();
+
   const logout = document.getElementById('logout-btn');
   if(logout) logout.addEventListener('click', (e) => {
       e.preventDefault();
