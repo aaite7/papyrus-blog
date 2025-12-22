@@ -19,21 +19,8 @@ export function injectGlobalStyles() {
     
     .star-icon { display: inline-block; color: #D4AF37; margin: 0 15px; font-size: 1.5rem; vertical-align: middle; animation: twinkle 3s infinite ease-in-out; }
     
-    .hero { 
-        position: relative !important; 
-        overflow: hidden !important; 
-        z-index: 1; 
-    }
-
-    .snowflake { 
-        position: absolute; 
-        top: -10px; 
-        background: white; 
-        border-radius: 50%; 
-        pointer-events: none; 
-        z-index: 10; 
-        box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
-    }
+    .hero { position: relative !important; overflow: hidden !important; z-index: 1; }
+    .snowflake { position: absolute; top: -10px; background: white; border-radius: 50%; pointer-events: none; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 
     /* --- 2. 卡片与布局 --- */
     .manuscript {
@@ -105,8 +92,17 @@ export function injectGlobalStyles() {
     /* --- 文章内容样式 --- */
     .article-content { width: 100%; font-size: 1.15rem; line-height: 1.8; color: #333; white-space: pre-wrap !important; overflow-wrap: break-word !important; text-align: justify; font-family: 'Lora', sans-serif; }
     .article-content p { margin-bottom: 1.5em; }
+
+    /* >>> 修复：强制去除文章内表格的边框 (解决“框框”问题) <<< */
+    .article-content table { border-collapse: collapse; border: none !important; margin: 1em 0; }
+    .article-content td, 
+    .article-content th { 
+        border: none !important; 
+        background: transparent !important; 
+        padding: 5px 0; 
+    }
     
-    /* >>> 终极修复：强制杀掉首字下沉 <<< */
+    /* >>> 修复：强制杀掉首字下沉 <<< */
     .article-content p::first-letter,
     .article-content p:first-of-type::first-letter,
     .article-content > p:first-child::first-letter {
