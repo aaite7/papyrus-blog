@@ -42,7 +42,6 @@ export function initReadingProgress() {
         bar.id = 'reading-progress';
         document.body.appendChild(bar);
     }
-    
     const update = () => {
         if (!window.location.pathname.startsWith('/post/')) {
             bar.style.width = '0%';
@@ -61,41 +60,32 @@ export function initReadingProgress() {
 
 // 4. 下雪特效 (已复活 ❄️)
 export function initSnowEffect() {
-    // 1. 找到头部区域 (只在这里下雪，不影响正文阅读)
     const hero = document.querySelector('.hero');
-    if (!hero) return; // 如果不是首页，就没有 hero，就不下雪
+    if (!hero) return; 
 
-    // 2. 防止重复启动
     if (hero.dataset.snowing) return;
     hero.dataset.snowing = "true";
 
-    // 3. 造雪逻辑
     const createSnowflake = () => {
-        if (!document.contains(hero)) return; // 页面切换后停止
+        if (!document.contains(hero)) return;
 
         const snowflake = document.createElement('div');
         snowflake.classList.add('snowflake');
         
-        // 随机大小、位置、透明度
-        const size = Math.random() * 3 + 2 + 'px'; // 2-5px
+        const size = Math.random() * 3 + 2 + 'px'; 
         snowflake.style.width = size;
         snowflake.style.height = size;
         snowflake.style.left = Math.random() * 100 + '%';
         snowflake.style.opacity = Math.random() * 0.5 + 0.3;
         
-        // 随机飘落时间 (5-10秒)
         const duration = Math.random() * 5 + 5 + 's';
         snowflake.style.animation = `snowfall ${duration} linear forwards`;
         
         hero.appendChild(snowflake);
 
-        // 飘完后自我销毁，防止内存泄漏
-        setTimeout(() => {
-            snowflake.remove();
-        }, 10000);
+        setTimeout(() => { snowflake.remove(); }, 10000);
     };
 
-    // 每 200毫秒造一片雪
     setInterval(createSnowflake, 200);
 }
 
@@ -146,11 +136,38 @@ export function initLightbox() {
     });
 }
 
-// 7. 其他辅助
-export function loadPrism() {} 
-export function highlightCode() {}
+// 7. 时钟与农历 (>>> 核心修复：找回农历显示 <<<)
 export function updateClock() {
     const d = document.getElementById('clock-display');
-    if(d) d.innerText = new Date().toLocaleTimeString();
+    if(!d) return;
+
+    const n = new Date();
+    
+    // 1. 获取基础时间
+    const timeStr = n.toLocaleTimeString('zh-CN', { hour12: false });
+    const dateStr = n.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+    
+    // 2. 获取农历 (使用 Intl API)
+    let lunarStr = '';
+    try {
+        // 部分浏览器支持 chinese calendar
+        lunarStr = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(n);
+        // 去掉前面的 "xxxx年" (农历年份通常不直观，只保留日期)
+        lunarStr = lunarStr.replace(/^\d+年/, ''); 
+    } catch(e) {
+        // 如果浏览器不支持农历，就留空，不报错
+        console.log('Lunar calendar not supported');
+    }
+
+    // 3. 渲染 HTML
+    d.innerHTML = `
+        <div style="font-size: 1.1rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div>
+        <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px;">${dateStr}</div>
+        ${lunarStr ? `<div style="font-size: 0.8rem; opacity: 0.6; color: #D4AF37; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}
+    `;
 }
+
+// 8. 页面元数据
 export function updatePageMeta(p) { document.title = p.title; }
+export function loadPrism() {} 
+export function highlightCode() {}
