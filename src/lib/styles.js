@@ -113,16 +113,39 @@ export function injectGlobalStyles() {
         font-weight: normal !important;
     }
 
+    /* >>> 3. 修复由缩进产生的伪代码块 (用户指定修复) <<< */
+    /* 针对那些没有 class="language-xxx" 的 pre 标签，强制去掉代码样式，变回普通文本 */
+    .article-content pre:not([class*="language-"]) {
+        margin: 0 0 1.5em 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        color: inherit !important;
+        font-family: inherit !important;
+        font-size: inherit !important;
+        white-space: pre-wrap !important; /* 核心：让文字自动换行，不要横向滚动 */
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        overflow-x: hidden !important;
+    }
+    .article-content pre:not([class*="language-"]) code {
+        padding: 0 !important;
+        background: transparent !important;
+        color: inherit !important;
+        font-family: inherit !important;
+        border: none !important;
+    }
+
     .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .article-content h1, .article-content h2 { margin-top: 1.5em; margin-bottom: 0.8em; font-family: 'Playfair Display', serif; }
     
-    /* >>> Live2D 必须强制置顶 <<< */
+    /* Live2D 必须强制置顶 */
     #live2d-widget {
         z-index: 99999 !important;
-        pointer-events: none; /* 让鼠标能穿透透明区域 */
+        pointer-events: none; 
     }
     #live2d-widget canvas {
-        pointer-events: auto; /* 只有点到人身上才响应 */
+        pointer-events: auto; 
     }
 
     #reading-progress { position: fixed; top: 0; left: 0; width: 0%; height: 6px; background: linear-gradient(90deg, #FFD700, #FF4500); z-index: 999999; pointer-events: none; }
