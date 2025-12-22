@@ -1,11 +1,11 @@
 // src/main.js
-import { authService } from './lib/auth.js';
+import { supabase } from './lib/supabase.js';
 import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
 import * as Views from './lib/views.js';
 
 const APP = document.getElementById('app');
-const state = { isAdmin: authService.isAuthenticated(), searchQuery: '' };
+const state = { isAdmin: false, searchQuery: '' };
 
 const router = {
   init() {
@@ -27,12 +27,19 @@ const router = {
     // 渲染骨架屏
     APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
     window.scrollTo(0, 0);
+
+    const live2dWidget = document.getElementById('live2d-widget');
+    if (live2dWidget) {
+        live2dWidget.style.display = (path === '/') ? 'block' : 'none';
+    }
     
     try {
         if (path === '/') {
             await Views.renderHome(APP, state);
             // 启动下雪
             if (UI.initSnowEffect) UI.initSnowEffect();
+            // 启动 Live2D
+            if (UI.initLive2D) UI.initLive2D();
         }
         else if (path === '/login') Views.renderLogin(APP, this);
         else if (path === '/admin') state.isAdmin ? await Views.renderAdmin(APP, this) : this.navigate('/login');
@@ -50,10 +57,13 @@ const router = {
   }
 };
 
-function updateAuthUI() {
+async function updateAuthUI() {
   const adminLink = document.getElementById('admin-link');
   const logoutBtn = document.getElementById('logout-btn');
   const toggleBtn = document.getElementById('dark-mode-toggle');
+
+  const { data: { session } } = await supabase.auth.getSession();
+  state.isAdmin = !!session;
 
   if (state.isAdmin) {
     adminLink.textContent = 'Scriptorium';
@@ -100,9 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if(UI.initWeather) UI.initWeather();
 
   const logout = document.getElementById('logout-btn');
-  if(logout) logout.addEventListener('click', (e) => {
+  if(logout) logout.addEventListener('click', async (e) => {
       e.preventDefault();
-      authService.logout();
+      await supabase.auth.signOut();
       state.isAdmin = false;
       updateAuthUI();
       router.navigate('/');
@@ -115,6 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const isDark = document.body.classList.toggle('dark-mode');
       localStorage.setItem('darkMode', isDark);
       e.target.textContent = isDark ? '☀' : '☾';
+  });
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    state.isAdmin = !!session;
+    updateAuthUI();
+    router.route(); // Re-route on auth change
   });
 
   updateAuthUI();

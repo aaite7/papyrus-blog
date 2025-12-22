@@ -8,7 +8,7 @@ let weatherData = {
     icon: '',
     province: ''
 };
-const AMAP_KEY = "41151e8e6a20ccd713ae595cd3236735"; 
+const AMAP_KEY = import.meta.env.VITE_AMAP_KEY; 
 
 // 1. 骨架屏
 export function renderSkeleton() {
@@ -242,15 +242,13 @@ export function initLive2D() {
 
     const script = document.createElement('script');
     script.id = 'live2d-script';
-    // 使用 unpkg 源加载 L2Dwidget
     script.src = 'https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js';
     script.async = true;
     script.onload = () => {
         if (window.L2Dwidget) {
             window.L2Dwidget.init({
                 "model": {
-                    // 使用 unpkg 源加载 Shizuku 模型
-                    "jsonPath": "https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json",
+                    "jsonPath": "https://imuncle.github.io/live2d/live2d_3/shizuku/shizuku.model.json",
                     "scale": 1
                 },
                 "display": {
@@ -261,7 +259,7 @@ export function initLive2D() {
                     "vOffset": -20
                 },
                 "mobile": {
-                    "show": true, // 保持在手机上也尝试显示，方便调试
+                    "show": true, 
                     "scale": 0.5
                 },
                 "react": {
