@@ -248,7 +248,7 @@ export function initLive2D() {
         if (window.L2Dwidget) {
             window.L2Dwidget.init({
                 "model": {
-                    "jsonPath": "https://imuncle.github.io/live2d/live2d_3/shizuku/shizuku.model.json",
+                    "jsonPath": "https://cdn.jsdelivr.net/npm/live2d-widget-model-epsilon2_1/assets/Epsilon2.1.model.json",
                     "scale": 1
                 },
                 "display": {
