@@ -23,21 +23,17 @@ export function injectGlobalStyles() {
     .hero { 
         position: relative !important; 
         overflow: hidden !important; 
-        z-index: 1; /* 确保 Hero 自身有层级 */
+        z-index: 1; 
     }
 
-    /* >>> 核心修复：雪花样式 <<< */
+    /* 雪花样式 */
     .snowflake { 
         position: absolute; 
         top: -10px; 
         background: white; 
         border-radius: 50%; 
         pointer-events: none; 
-        
-        /* 1. 提高层级，防止被标题文字遮挡 */
         z-index: 10; 
-        
-        /* 2. 加上阴影，防止在白色背景下“隐形” */
         box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
     }
 
@@ -109,7 +105,10 @@ export function injectGlobalStyles() {
     body.dark-mode #toc a:hover, body.dark-mode #toc a.active { color: #D4AF37; }
 
     /* --- 其他样式 --- */
+    /* 核心内容样式：确保没有首字下沉 */
     .article-content { width: 100%; font-size: 1.15rem; line-height: 1.8; color: #333; white-space: pre-wrap !important; overflow-wrap: break-word !important; text-align: justify; font-family: 'Lora', sans-serif; }
+    .article-content p { margin-bottom: 1.5em; } /* 确保段落间距正常 */
+    
     .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .article-content h1, .article-content h2 { margin-top: 1.5em; margin-bottom: 0.8em; font-family: 'Playfair Display', serif; }
     
