@@ -16,15 +16,32 @@ export function injectGlobalStyles() {
     @keyframes snowfall { 0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(300px) translateX(20px) rotate(360deg); opacity: 0; } }
     @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
     @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
-    @keyframes fadeInSlide { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
-
+    
     .star-icon { display: inline-block; color: #D4AF37; margin: 0 15px; font-size: 1.5rem; vertical-align: middle; animation: twinkle 3s infinite ease-in-out; }
-    .hero { position: relative !important; overflow: hidden !important; }
-    .snowflake { position: absolute; top: -10px; background: white; border-radius: 50%; pointer-events: none; z-index: 1; box-shadow: 0 0 5px rgba(255,255,255,0.8); }
+    
+    /* 英雄区域 (Hero) 设置 */
+    .hero { 
+        position: relative !important; 
+        overflow: hidden !important; 
+        z-index: 1; /* 确保 Hero 自身有层级 */
+    }
+
+    /* >>> 核心修复：雪花样式 <<< */
+    .snowflake { 
+        position: absolute; 
+        top: -10px; 
+        background: white; 
+        border-radius: 50%; 
+        pointer-events: none; 
+        
+        /* 1. 提高层级，防止被标题文字遮挡 */
+        z-index: 10; 
+        
+        /* 2. 加上阴影，防止在白色背景下“隐形” */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
+    }
 
     /* --- 2. 卡片与布局 --- */
-    
-    /* 首页卡片 */
     .manuscript {
         background: #fff;
         padding: 40px;
@@ -38,18 +55,14 @@ export function injectGlobalStyles() {
     }
     .manuscript:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
 
-    /* >>> 修复 1: 详情页容器 (加上背景和边框) <<< */
     .single-manuscript {
         max-width: 800px !important;
         margin: 40px auto;
-        
-        /* 赋予卡片外观 */
         background: #fff;
         padding: 50px;
         border: 1px solid rgba(212, 175, 55, 0.2);
         border-radius: 8px;
         box-shadow: 0 4px 30px rgba(0,0,0,0.03);
-        
         position: relative;
         transition: all 0.3s;
     }
@@ -63,10 +76,9 @@ export function injectGlobalStyles() {
         text-align: center;
     }
 
-    .manuscript-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #8B0000; margin: 0; line-height: 1.3; overflow-wrap: break-word; }
+    .manuscript-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #8B0000; margin: 0; line-height: 1.3; }
     .single-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #8B0000; margin: 0 0 10px 0; line-height: 1.2; text-align: center; }
     
-    /* 徽章与图标 */
     .pinned-badge { display: inline-block; background: #D4AF37; color: #fff; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; letter-spacing: 1px; }
     .list-icon { font-size: 3rem; line-height: 1; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
     .list-icon img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; }
@@ -86,49 +98,15 @@ export function injectGlobalStyles() {
     #toc a.active { color: #8B0000; font-weight: bold; padding-left: 15px; border-left: 3px solid #8B0000; margin-left: -12px; }
     @media (max-width: 1200px) { #toc { display: none !important; } }
 
-    /* --- 4. 暗黑模式 (Dark Mode) --- */
-    /* >>> 修复 2: 强制夜间模式配色 <<< */
-    
+    /* --- 4. 暗黑模式 --- */
     body.dark-mode { background: #121212 !important; color: #e0e0e0; }
-    
-    /* 让首页卡片和详情页卡片变黑 */
-    body.dark-mode .manuscript, 
-    body.dark-mode .single-manuscript {
-        background: #1e1e1e !important;
-        border-color: #333 !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    }
-    
-    /* 标题变白 */
-    body.dark-mode .manuscript-title,
-    body.dark-mode .single-title {
-        color: #f0f0f0 !important;
-    }
-    
-    /* 文字变灰白 */
-    body.dark-mode .article-content,
-    body.dark-mode .manuscript-excerpt {
-        color: #ccc !important;
-    }
-    
-    /* 页脚变黑 */
-    body.dark-mode .site-footer {
-        background: #181818 !important;
-        border-top-color: #333 !important;
-        color: #888 !important;
-    }
-    
-    /* 编辑器变黑 */
-    body.dark-mode .editor-textarea {
-        background: #1e1e1e !important;
-        color: #d4d4d4 !important;
-        border-color: #444 !important;
-    }
-    
-    /* 目录文字适配 */
+    body.dark-mode .manuscript, body.dark-mode .single-manuscript { background: #1e1e1e !important; border-color: #333 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+    body.dark-mode .manuscript-title, body.dark-mode .single-title { color: #f0f0f0 !important; }
+    body.dark-mode .article-content { color: #ccc !important; }
+    body.dark-mode .site-footer { background: #181818 !important; border-top-color: #333 !important; color: #888 !important; }
+    body.dark-mode .editor-textarea { background: #1e1e1e !important; color: #d4d4d4 !important; border-color: #444 !important; }
     body.dark-mode #toc a { color: #666; }
-    body.dark-mode #toc a:hover,
-    body.dark-mode #toc a.active { color: #D4AF37; }
+    body.dark-mode #toc a:hover, body.dark-mode #toc a.active { color: #D4AF37; }
 
     /* --- 其他样式 --- */
     .article-content { width: 100%; font-size: 1.15rem; line-height: 1.8; color: #333; white-space: pre-wrap !important; overflow-wrap: break-word !important; text-align: justify; font-family: 'Lora', sans-serif; }
@@ -143,12 +121,13 @@ export function injectGlobalStyles() {
     .action-btn { width: 50px; height: 50px; border-radius: 50%; background: #fdfbf7; color: #704214; border: 2px solid #D4AF37; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s; position: relative; }
     .action-btn.liked { color: #e91e63 !important; border-color: #e91e63 !important; animation: heartBeat 1s; }
     .btn-badge { position: absolute; top: -5px; right: -5px; background: #8B0000; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; }
+    .site-footer { margin-top: 80px; padding: 40px 20px; text-align: center; border-top: 1px solid #D4AF37; background: #fdfbf7; color: #704214; }
+    
     .editor-container { display: flex; gap: 20px; align-items: stretch; height: 600px; }
     .editor-pane, .preview-pane { flex: 1; display: flex; flex-direction: column; transition: all 0.3s ease; }
     .hidden { display: none !important; }
     .editor-textarea { width: 100%; height: 100%; background-color: #ffffff !important; color: #333333 !important; font-family: 'Consolas', monospace !important; font-size: 15px !important; line-height: 1.6 !important; padding: 25px !important; border: 2px solid rgba(212, 175, 55, 0.3) !important; border-radius: 8px; resize: none; outline: none; overflow-y: auto !important; white-space: pre-wrap !important; }
     .preview-pane { border: 2px dashed rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 25px; background: #fffdf5; overflow-y: auto; }
-    .site-footer { margin-top: 80px; padding: 40px 20px; text-align: center; border-top: 1px solid #D4AF37; background: #fdfbf7; color: #704214; }
     
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -162,15 +141,6 @@ export function injectGlobalStyles() {
     pre { background: #272822 !important; color: #f8f8f2 !important; padding: 1.5rem !important; margin: 0 !important; overflow-x: auto; font-family: 'Consolas', monospace !important; white-space: pre !important; }
     .copy-btn { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 0.75rem; padding: 5px 10px; border-radius: 4px; cursor: pointer; opacity: 0; transition: 0.2s; }
     .code-wrapper:hover .copy-btn { opacity: 1; }
-    .icon-input-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #fdfbf7; padding: 10px; border: 1px dashed #D4AF37; border-radius: 6px; }
-    .current-icon-preview { font-size: 2rem; width: 50px; text-align: center; }
-    .current-icon-preview img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
-    .skeleton { animation: shimmer 2s infinite linear; background: linear-gradient(to right, #eee 4%, #f5f5f5 25%, #eee 36%); background-size: 1000px 100%; border-radius: 4px; }
-    .skeleton-card { padding: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
-    .skeleton-title { height: 28px; width: 60%; margin-bottom: 15px; }
-    .skeleton-img { height: 200px; width: 100%; margin-bottom: 15px; }
-    .skeleton-text { height: 16px; width: 100%; margin-bottom: 8px; }
-    .skeleton-text.short { width: 80%; }
     .selection-popover { position: absolute; background: #222; border-radius: 5px; padding: 5px 10px; display: flex; gap: 10px; z-index: 10000; opacity: 0; pointer-events: none; transition: 0.2s; transform: translateY(10px); }
     .selection-popover.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
     .popover-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
@@ -178,6 +148,12 @@ export function injectGlobalStyles() {
     .lightbox-overlay.active { opacity: 1; pointer-events: auto; }
     .lightbox-img { max-width: 95%; max-height: 95%; border: 2px solid #D4AF37; transform: scale(0.9); transition: 0.3s; }
     .lightbox-overlay.active .lightbox-img { transform: scale(1); }
+    .skeleton { animation: shimmer 2s infinite linear; background: linear-gradient(to right, #eee 4%, #f5f5f5 25%, #eee 36%); background-size: 1000px 100%; border-radius: 4px; }
+    .skeleton-card { padding: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+    .skeleton-title { height: 28px; width: 60%; margin-bottom: 15px; }
+    .skeleton-img { height: 200px; width: 100%; margin-bottom: 15px; }
+    .skeleton-text { height: 16px; width: 100%; margin-bottom: 8px; }
+    .skeleton-text.short { width: 80%; }
     mark { background-color: rgba(212, 175, 55, 0.4); color: inherit; padding: 0 2px; border-radius: 2px; }
   `;
   document.head.appendChild(style);
