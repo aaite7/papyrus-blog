@@ -14,8 +14,6 @@ export function injectGlobalStyles() {
     /* 基础动画 */
     @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.2) rotate(15deg); } }
     @keyframes snowfall { 0% { transform: translateY(-10px) translateX(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(300px) translateX(20px) rotate(360deg); opacity: 0; } }
-    @keyframes heartBeat { 0% { transform: scale(1); } 14% { transform: scale(1.3); } 28% { transform: scale(1); } 42% { transform: scale(1.3); } 70% { transform: scale(1); } }
-    @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
     
     .star-icon { display: inline-block; color: #D4AF37; margin: 0 15px; font-size: 1.5rem; vertical-align: middle; animation: twinkle 3s infinite ease-in-out; }
     
@@ -61,10 +59,6 @@ export function injectGlobalStyles() {
     .single-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #8B0000; margin: 0 0 10px 0; line-height: 1.2; text-align: center; }
     
     .pinned-badge { display: inline-block; background: #D4AF37; color: #fff; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; letter-spacing: 1px; }
-    .list-icon { font-size: 3rem; line-height: 1; margin: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-    .list-icon img { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; }
-    .single-icon { font-size: 4rem; margin-bottom: 20px; display: block; text-align: center; }
-    .single-icon img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; }
 
     /* --- 3. 悬浮目录 (TOC) --- */
     #toc {
@@ -93,19 +87,23 @@ export function injectGlobalStyles() {
     .article-content { width: 100%; font-size: 1.15rem; line-height: 1.8; color: #333; white-space: pre-wrap !important; overflow-wrap: break-word !important; text-align: justify; font-family: 'Lora', sans-serif; }
     .article-content p { margin-bottom: 1.5em; }
 
-    /* >>> 修复：强制去除文章内表格的边框 (解决“框框”问题) <<< */
-    .article-content table { border-collapse: collapse; border: none !important; margin: 1em 0; }
-    .article-content td, 
-    .article-content th { 
-        border: none !important; 
-        background: transparent !important; 
-        padding: 5px 0; 
-    }
+    /* >>> 强制清洗区：清除所有可能的“框框”和“首字下沉” <<< */
     
-    /* >>> 修复：强制杀掉首字下沉 <<< */
-    .article-content p::first-letter,
-    .article-content p:first-of-type::first-letter,
-    .article-content > p:first-child::first-letter {
+    /* 1. 彻底杀掉表格、代码块的边框 */
+    .article-content table, 
+    .article-content tbody,
+    .article-content tr, 
+    .article-content td, 
+    .article-content th {
+        border: 0 solid transparent !important;
+        border-width: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 5px 0 !important;
+    }
+
+    /* 2. 杀掉首字下沉 */
+    .article-content *::first-letter {
         float: none !important;
         font-size: inherit !important;
         line-height: inherit !important;
@@ -113,12 +111,20 @@ export function injectGlobalStyles() {
         margin: 0 !important;
         padding: 0 !important;
         font-weight: normal !important;
-        font-family: inherit !important;
     }
 
     .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .article-content h1, .article-content h2 { margin-top: 1.5em; margin-bottom: 0.8em; font-family: 'Playfair Display', serif; }
     
+    /* >>> Live2D 必须强制置顶 <<< */
+    #live2d-widget {
+        z-index: 99999 !important;
+        pointer-events: none; /* 让鼠标能穿透透明区域 */
+    }
+    #live2d-widget canvas {
+        pointer-events: auto; /* 只有点到人身上才响应 */
+    }
+
     #reading-progress { position: fixed; top: 0; left: 0; width: 0%; height: 6px; background: linear-gradient(90deg, #FFD700, #FF4500); z-index: 999999; pointer-events: none; }
     .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
     .toast-notification { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 12px 24px; border-radius: 50px; font-family: 'Lora', serif; font-size: 0.95rem; border: 1px solid #D4AF37; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(-20px); transition: all 0.3s; pointer-events: auto; }
