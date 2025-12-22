@@ -1,5 +1,14 @@
 // src/lib/ui.js
 
+// >>> 全局变量：用于存储天气信息，供时钟使用 <<<
+let weatherData = {
+    city: '',
+    weather: '',
+    temp: '',
+    icon: ''
+};
+const AMAP_KEY = "41151e8e6a20ccd713ae595cd3236735"; // 你的高德 KEY
+
 // 1. 骨架屏
 export function renderSkeleton() {
     const card = `
@@ -58,34 +67,27 @@ export function initReadingProgress() {
     update();
 }
 
-// 4. 下雪特效 (已复活 ❄️)
+// 4. 下雪特效
 export function initSnowEffect() {
     const hero = document.querySelector('.hero');
     if (!hero) return; 
-
     if (hero.dataset.snowing) return;
     hero.dataset.snowing = "true";
 
     const createSnowflake = () => {
         if (!document.contains(hero)) return;
-
         const snowflake = document.createElement('div');
         snowflake.classList.add('snowflake');
-        
         const size = Math.random() * 3 + 2 + 'px'; 
         snowflake.style.width = size;
         snowflake.style.height = size;
         snowflake.style.left = Math.random() * 100 + '%';
         snowflake.style.opacity = Math.random() * 0.5 + 0.3;
-        
         const duration = Math.random() * 5 + 5 + 's';
         snowflake.style.animation = `snowfall ${duration} linear forwards`;
-        
         hero.appendChild(snowflake);
-
         setTimeout(() => { snowflake.remove(); }, 10000);
     };
-
     setInterval(createSnowflake, 200);
 }
 
@@ -136,38 +138,88 @@ export function initLightbox() {
     });
 }
 
-// 7. 时钟与农历 (>>> 核心修复：找回农历显示 <<<)
+// --- >>> 核心功能：天气与时钟整合 <<< ---
+
+// 7. 初始化天气 (IP定位 + 天气查询)
+export async function initWeather() {
+    try {
+        // A. 获取 IP 定位
+        const ipRes = await fetch(`https://restapi.amap.com/v3/ip?key=${AMAP_KEY}`);
+        const ipData = await ipRes.json();
+        
+        if (ipData.status === '1' && ipData.adcode) {
+            // B. 获取天气
+            const weatherRes = await fetch(`https://restapi.amap.com/v3/weather/weatherInfo?city=${ipData.adcode}&key=${AMAP_KEY}`);
+            const wData = await weatherRes.json();
+            
+            if (wData.status === '1' && wData.lives && wData.lives.length > 0) {
+                const live = wData.lives[0];
+                weatherData = {
+                    city: live.city,
+                    weather: live.weather,
+                    temp: live.temperature,
+                    icon: getWeatherIcon(live.weather) // 简单的图标映射
+                };
+                // 立即刷新一次时钟以显示天气
+                updateClock();
+            }
+        }
+    } catch (e) {
+        console.error("Weather fetch failed:", e);
+    }
+}
+
+// 简单的天气图标映射辅助函数
+function getWeatherIcon(text) {
+    if (text.includes('晴')) return '☀️';
+    if (text.includes('云') || text.includes('阴')) return '☁️';
+    if (text.includes('雨')) return '🌧️';
+    if (text.includes('雪')) return '❄️';
+    if (text.includes('雷')) return '⛈️';
+    if (text.includes('风')) return '🍃';
+    return '🌡️';
+}
+
+// 8. 时钟渲染 (含农历 + 天气)
 export function updateClock() {
     const d = document.getElementById('clock-display');
     if(!d) return;
 
     const n = new Date();
     
-    // 1. 获取基础时间
+    // 时间
     const timeStr = n.toLocaleTimeString('zh-CN', { hour12: false });
     const dateStr = n.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
     
-    // 2. 获取农历 (使用 Intl API)
+    // 农历
     let lunarStr = '';
     try {
-        // 部分浏览器支持 chinese calendar
         lunarStr = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(n);
-        // 去掉前面的 "xxxx年" (农历年份通常不直观，只保留日期)
         lunarStr = lunarStr.replace(/^\d+年/, ''); 
-    } catch(e) {
-        // 如果浏览器不支持农历，就留空，不报错
-        console.log('Lunar calendar not supported');
+    } catch(e) {}
+
+    // 组合 HTML：时间 + 日期 + (农历 | 天气)
+    // 如果有天气数据，就显示；否则显示农历
+    let extraInfo = '';
+    if (weatherData.city) {
+        extraInfo = `
+            <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 4px; color: #D4AF37;">
+                ${weatherData.icon} ${weatherData.city} · ${weatherData.weather} ${weatherData.temp}°C
+            </div>
+            <div style="font-size: 0.7rem; opacity: 0.5; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>
+        `;
+    } else {
+        extraInfo = lunarStr ? `<div style="font-size: 0.8rem; opacity: 0.6; color: #D4AF37; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : '';
     }
 
-    // 3. 渲染 HTML
     d.innerHTML = `
         <div style="font-size: 1.1rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div>
         <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px;">${dateStr}</div>
-        ${lunarStr ? `<div style="font-size: 0.8rem; opacity: 0.6; color: #D4AF37; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}
+        ${extraInfo}
     `;
 }
 
-// 8. 页面元数据
+// 9. 页面元数据
 export function updatePageMeta(p) { document.title = p.title; }
 export function loadPrism() {} 
 export function highlightCode() {}
