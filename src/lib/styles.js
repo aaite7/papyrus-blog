@@ -55,22 +55,8 @@ export function injectGlobalStyles() {
         text-align: center;
     }
 
-    /* >>> 字体更新：加入 'Noto Serif SC' <<< */
-    .manuscript-title { 
-        font-family: 'Playfair Display', 'Noto Serif SC', serif; 
-        font-size: 1.8rem; 
-        color: #8B0000; 
-        margin: 0; 
-        line-height: 1.3; 
-    }
-    .single-title { 
-        font-family: 'Playfair Display', 'Noto Serif SC', serif; 
-        font-size: 2.5rem; 
-        color: #8B0000; 
-        margin: 0 0 10px 0; 
-        line-height: 1.2; 
-        text-align: center; 
-    }
+    .manuscript-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: #8B0000; margin: 0; line-height: 1.3; }
+    .single-title { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #8B0000; margin: 0 0 10px 0; line-height: 1.2; text-align: center; }
     
     .pinned-badge { display: inline-block; background: #D4AF37; color: #fff; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; letter-spacing: 1px; }
 
@@ -82,18 +68,7 @@ export function injectGlobalStyles() {
         z-index: 999; text-align: left; padding-left: 10px; border-left: 2px solid rgba(212, 175, 55, 0.15);
     }
     #toc::-webkit-scrollbar { display: none !important; }
-    
-    /* >>> 字体更新：TOC 也使用宋体 <<< */
-    #toc a { 
-        display: block; 
-        margin-bottom: 12px; 
-        color: #999; 
-        text-decoration: none; 
-        font-size: 0.9rem; 
-        font-family: 'Lora', 'Noto Serif SC', serif; 
-        transition: 0.2s; 
-        padding-left: 10px; 
-    }
+    #toc a { display: block; margin-bottom: 12px; color: #999; text-decoration: none; font-size: 0.9rem; font-family: 'Lora', serif; transition: 0.2s; padding-left: 10px; }
     #toc a:hover { color: #D4AF37; padding-left: 15px; }
     #toc a.active { color: #8B0000; font-weight: bold; padding-left: 15px; border-left: 3px solid #8B0000; margin-left: -12px; }
     @media (max-width: 1200px) { #toc { display: none !important; } }
@@ -109,20 +84,10 @@ export function injectGlobalStyles() {
     body.dark-mode #toc a:hover, body.dark-mode #toc a.active { color: #D4AF37; }
 
     /* --- 文章内容样式 --- */
-    /* >>> 字体更新：正文使用宋体 <<< */
-    .article-content { 
-        width: 100%; 
-        font-size: 1.15rem; 
-        line-height: 1.8; 
-        color: #333; 
-        white-space: pre-wrap !important; 
-        overflow-wrap: break-word !important; 
-        text-align: justify; 
-        font-family: 'Lora', 'Noto Serif SC', sans-serif; 
-    }
+    .article-content { width: 100%; font-size: 1.15rem; line-height: 1.8; color: #333; white-space: pre-wrap !important; overflow-wrap: break-word !important; text-align: justify; font-family: 'Lora', sans-serif; }
     .article-content p { margin-bottom: 1.5em; }
 
-    /* >>> 强制清洗区：清除“框框”，并精细化控制“首字下沉” <<< */
+    /* >>> 强制清洗区：清除所有可能的“框框”和“首字下沉” <<< */
     
     /* 1. 彻底杀掉表格、代码块的边框 */
     .article-content table, 
@@ -137,8 +102,8 @@ export function injectGlobalStyles() {
         padding: 5px 0 !important;
     }
 
-    /* 2. 仅在文章详情页应用首字下沉 (当前设置为强制清除) */
-    .single-manuscript .article-content p::first-letter {
+    /* 2. 杀掉首字下沉 */
+    .article-content *::first-letter {
         float: none !important;
         font-size: inherit !important;
         line-height: inherit !important;
@@ -148,7 +113,8 @@ export function injectGlobalStyles() {
         font-weight: normal !important;
     }
 
-    /* 3. 修复由缩进产生的伪代码块 */
+    /* >>> 3. 修复由缩进产生的伪代码块 (用户指定修复) <<< */
+    /* 针对那些没有 class="language-xxx" 的 pre 标签，强制去掉代码样式，变回普通文本 */
     .article-content pre:not([class*="language-"]) {
         margin: 0 0 1.5em 0 !important;
         padding: 0 !important;
@@ -156,7 +122,7 @@ export function injectGlobalStyles() {
         color: inherit !important;
         font-family: inherit !important;
         font-size: inherit !important;
-        white-space: pre-wrap !important;
+        white-space: pre-wrap !important; /* 核心：让文字自动换行，不要横向滚动 */
         border: none !important;
         box-shadow: none !important;
         border-radius: 0 !important;
@@ -171,9 +137,7 @@ export function injectGlobalStyles() {
     }
 
     .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    
-    /* >>> 字体更新：文章内标题使用宋体 <<< */
-    .article-content h1, .article-content h2 { margin-top: 1.5em; margin-bottom: 0.8em; font-family: 'Playfair Display', 'Noto Serif SC', serif; }
+    .article-content h1, .article-content h2 { margin-top: 1.5em; margin-bottom: 0.8em; font-family: 'Playfair Display', serif; }
     
     /* Live2D 必须强制置顶 */
     #live2d-widget {
@@ -186,7 +150,7 @@ export function injectGlobalStyles() {
 
     #reading-progress { position: fixed; top: 0; left: 0; width: 0%; height: 6px; background: linear-gradient(90deg, #FFD700, #FF4500); z-index: 999999; pointer-events: none; }
     .toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-    .toast-notification { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 12px 24px; border-radius: 50px; font-family: 'Lora', 'Noto Serif SC', serif; font-size: 0.95rem; border: 1px solid #D4AF37; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(-20px); transition: all 0.3s; pointer-events: auto; }
+    .toast-notification { background: rgba(30, 30, 30, 0.95); color: #fff; padding: 12px 24px; border-radius: 50px; font-family: 'Lora', serif; font-size: 0.95rem; border: 1px solid #D4AF37; display: flex; align-items: center; gap: 10px; opacity: 0; transform: translateY(-20px); transition: all 0.3s; pointer-events: auto; }
     .toast-notification.show { opacity: 1; transform: translateY(0); }
     .floating-bar { position: fixed; bottom: 50px; right: 30px; display: flex; flex-direction: column; gap: 15px; z-index: 99999; opacity: 1; pointer-events: auto; }
     .action-btn { width: 50px; height: 50px; border-radius: 50%; background: #fdfbf7; color: #704214; border: 2px solid #D4AF37; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.2s; position: relative; }
