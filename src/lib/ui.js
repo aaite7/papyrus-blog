@@ -68,7 +68,7 @@ export function initReadingProgress() {
     update();
 }
 
-// 4. 下雪特效 (11月-2月限定) ❄️
+// 4. 下雪特效 (11月-2月限定)
 export function initSnowEffect() {
     const now = new Date();
     const month = now.getMonth() + 1; 
@@ -157,7 +157,6 @@ function loadAMapScript() {
 }
 
 export async function initWeather() {
-    console.log("Initializing Weather...");
     try {
         await loadAMapScript();
         const citySearch = new window.AMap.CitySearch();
@@ -237,44 +236,43 @@ export function updateClock() {
     d.innerHTML = `<div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div><div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>${weatherHtml}${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}`;
 }
 
-// >>> 核心修复：更快的 Live2D 源 <<<
+// >>> 核心修复：使用国内极速 CDN 加载 Live2D <<<
 export function initLive2D() {
     if (document.getElementById('live2d-script')) return;
 
+    console.log("Starting Live2D load...");
     const script = document.createElement('script');
     script.id = 'live2d-script';
-    // 换成 fastly.jsdelivr.net，国内加载更快，不容易失败
-    script.src = 'https://fastly.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js';
+    // 换用 fastly.jsdelivr.net (国内访问极快)
+    script.src = 'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/live2d.min.js';
     script.async = true;
     script.onload = () => {
-        if (window.L2Dwidget) {
-            console.log("Live2D script loaded, initializing...");
-            window.L2Dwidget.init({
-                "model": {
-                    // 同样换成 fastly.jsdelivr.net 的模型源
-                    "jsonPath": "https://fastly.jsdelivr.net/npm/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json",
-                    "scale": 1
-                },
-                "display": {
-                    "position": "left",
-                    "width": 150,
-                    "height": 300,
-                    "hOffset": 20, 
-                    "vOffset": 0
-                },
-                "mobile": {
-                    "show": true, // 强制在所有设备显示，方便调试
-                    "scale": 0.5
-                },
-                "react": {
-                    "opacityDefault": 0.9,
-                    "opacityOnHover": 1
-                }
-            });
+        console.log("Live2D core loaded.");
+        if (window.loadlive2d) {
+            // Shizuku 模型 (也换用 fastly.jsdelivr.net)
+            const modelUrl = 'https://fastly.jsdelivr.net/npm/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json';
+            
+            // 动态插入 canvas，避免 L2Dwidget 自动生成的 canvas 被遮挡
+            // 注意：stevenjoezhang 的版本使用的是 loadlive2d 函数，而不是 L2Dwidget.init
+            let canvas = document.createElement('canvas');
+            canvas.id = 'live2d';
+            canvas.width = 280;
+            canvas.height = 800;
+            canvas.style.position = 'fixed';
+            canvas.style.left = '0px';  // 靠左
+            canvas.style.bottom = '0px'; // 靠底
+            canvas.style.zIndex = '99999'; // 强制顶层
+            canvas.style.width = '140px'; // 缩放显示
+            canvas.style.height = '400px';
+            canvas.style.pointerEvents = 'none'; // 默认不挡鼠标，只有模型区域挡
+            document.body.appendChild(canvas);
+
+            window.loadlive2d("live2d", modelUrl);
+            console.log("Live2D model loaded.");
         }
     };
-    script.onerror = () => {
-        console.error("Live2D script failed to load. Check network.");
+    script.onerror = (e) => {
+        console.error("Live2D script load failed. Check network.", e);
     };
     document.body.appendChild(script);
 }
