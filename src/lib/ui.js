@@ -68,12 +68,10 @@ export function initReadingProgress() {
     update();
 }
 
-// 4. 下雪特效 (已开启季节限定：11月-2月) ❄️
+// 4. 下雪特效 (11月-2月限定) ❄️
 export function initSnowEffect() {
-    // >>> 季节判断逻辑 <<<
     const now = new Date();
-    const month = now.getMonth() + 1; // getMonth() 返回 0-11，所以要 +1
-    // 如果不是 11月, 12月, 1月, 2月，就不下雪，直接退出
+    const month = now.getMonth() + 1; 
     if (![11, 12, 1, 2].includes(month)) return;
 
     const hero = document.querySelector('.hero');
@@ -145,18 +143,12 @@ export function initLightbox() {
     });
 }
 
-// --- >>> 核心功能：使用高德 JS API 加载天气 (解决 CORS 问题) <<< ---
-
-// 辅助：动态加载高德脚本
+// 7. 天气与时钟
 function loadAMapScript() {
     return new Promise((resolve, reject) => {
-        if (window.AMap) {
-            resolve(window.AMap);
-            return;
-        }
+        if (window.AMap) { resolve(window.AMap); return; }
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        // 使用 2.0 版本，plugin 参数预加载插件
         script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.CitySearch,AMap.Weather`;
         script.onload = () => resolve(window.AMap);
         script.onerror = (e) => reject(e);
@@ -164,32 +156,21 @@ function loadAMapScript() {
     });
 }
 
-// 7. 初始化天气
 export async function initWeather() {
-    console.log("Initializing AMap Weather...");
+    console.log("Initializing Weather...");
     try {
         await loadAMapScript();
-        
-        // 1. IP 定位
         const citySearch = new window.AMap.CitySearch();
         citySearch.getLocalCity(function (status, result) {
             if (status === 'complete' && result.info === 'OK') {
-                const city = result.city || result.province;
                 const adcode = result.adcode;
-                weatherData.city = city;
-                weatherData.province = result.province;
-                
-                // 2. 查询天气
+                weatherData.city = result.city || result.province;
                 const weather = new window.AMap.Weather();
                 weather.getLive(adcode, function(err, data) {
                     if (!err) {
                         weatherData.weather = data.weather;
                         weatherData.temp = data.temperature;
                         weatherData.icon = getWeatherIcon(data.weather);
-                        updateClock();
-                    } else {
-                        console.error('Weather error:', err);
-                        weatherData.weather = '未知';
                         updateClock();
                     }
                 });
@@ -199,9 +180,7 @@ export async function initWeather() {
                 updateClock();
             }
         });
-
     } catch (e) {
-        console.error("AMap SDK load failed:", e);
         weatherData.city = 'API 错误';
         updateClock();
     }
@@ -219,65 +198,81 @@ function getWeatherIcon(text) {
     return '🌡️';
 }
 
-// 8. 时钟渲染
 export function updateClock() {
     let d = document.getElementById('clock-display');
     if(!d) {
         d = document.createElement('div');
         d.id = 'clock-display';
-        d.style.position = 'fixed';
-        d.style.top = '20px';
-        d.style.right = '20px';
-        d.style.textAlign = 'right';
-        d.style.zIndex = '999';
-        d.style.fontFamily = "'Lora', serif";
+        d.style.position = 'fixed'; d.style.top = '20px'; d.style.right = '20px'; d.style.textAlign = 'right'; d.style.zIndex = '999'; d.style.fontFamily = "'Lora', serif";
         document.body.appendChild(d);
     }
 
-    // 黑夜模式适配
     if (document.body.classList.contains('dark-mode')) {
-        d.style.color = '#e0e0e0';
-        d.style.textShadow = 'none';
+        d.style.color = '#e0e0e0'; d.style.textShadow = 'none';
     } else {
-        d.style.color = '#333';
-        d.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+        d.style.color = '#333'; d.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
     }
 
     const n = new Date();
     const timeStr = n.toLocaleTimeString('zh-CN', { hour12: false });
     const dateStr = n.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-    
     let lunarStr = '';
     try {
         lunarStr = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(n);
         lunarStr = lunarStr.replace(/^\d+年/, ''); 
     } catch(e) {}
 
-    // 组合天气信息
     let weatherHtml = '';
     let infoText = weatherData.city;
-    if (weatherData.weather) {
-        infoText += ` · ${weatherData.weather} ${weatherData.temp}°C`;
-    }
+    if (weatherData.weather) infoText += ` · ${weatherData.weather} ${weatherData.temp}°C`;
     
     let flag = '🇨🇳'; 
     if (weatherData.city === '定位中...') flag = '🌏';
     if (weatherData.city === '定位失败' || weatherData.city === 'API 错误') flag = '⚠️';
 
     if (weatherData.city) {
-        weatherHtml = `
-            <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px; color: #D4AF37; font-weight: bold;">
-                ${flag} ${weatherData.icon || ''} ${infoText}
-            </div>
-        `;
+        weatherHtml = `<div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px; color: #D4AF37; font-weight: bold;">${flag} ${weatherData.icon || ''} ${infoText}</div>`;
     }
 
-    d.innerHTML = `
-        <div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div>
-        <div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>
-        ${weatherHtml}
-        ${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}
-    `;
+    d.innerHTML = `<div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div><div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>${weatherHtml}${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}`;
+}
+
+// >>> 核心新增：Live2D 看板娘 <<<
+export function initLive2D() {
+    // 避免重复加载
+    if (document.getElementById('live2d-script')) return;
+
+    const script = document.createElement('script');
+    script.id = 'live2d-script';
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/live2d-widget/3.1.4/L2Dwidget.min.js';
+    script.async = true;
+    script.onload = () => {
+        if (window.L2Dwidget) {
+            window.L2Dwidget.init({
+                "model": {
+                    // 使用经典的 Shizuku 模型 (和你发的网站一样)
+                    "jsonPath": "https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json",
+                    "scale": 1
+                },
+                "display": {
+                    "position": "left", // 放在左边，避免和右边的悬浮按钮冲突
+                    "width": 150,
+                    "height": 300,
+                    "hOffset": 0,
+                    "vOffset": -20
+                },
+                "mobile": {
+                    "show": false, // 手机端不显示，太占位置
+                    "scale": 0.5
+                },
+                "react": {
+                    "opacityDefault": 0.9,
+                    "opacityOnHover": 1
+                }
+            });
+        }
+    };
+    document.body.appendChild(script);
 }
 
 // 9. 页面元数据
