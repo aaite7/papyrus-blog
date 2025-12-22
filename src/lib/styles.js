@@ -19,14 +19,12 @@ export function injectGlobalStyles() {
     
     .star-icon { display: inline-block; color: #D4AF37; margin: 0 15px; font-size: 1.5rem; vertical-align: middle; animation: twinkle 3s infinite ease-in-out; }
     
-    /* 英雄区域 (Hero) 设置 */
     .hero { 
         position: relative !important; 
         overflow: hidden !important; 
         z-index: 1; 
     }
 
-    /* 雪花样式 */
     .snowflake { 
         position: absolute; 
         top: -10px; 
@@ -104,11 +102,24 @@ export function injectGlobalStyles() {
     body.dark-mode #toc a { color: #666; }
     body.dark-mode #toc a:hover, body.dark-mode #toc a.active { color: #D4AF37; }
 
-    /* --- 其他样式 --- */
-    /* 核心内容样式：确保没有首字下沉 */
+    /* --- 文章内容样式 --- */
     .article-content { width: 100%; font-size: 1.15rem; line-height: 1.8; color: #333; white-space: pre-wrap !important; overflow-wrap: break-word !important; text-align: justify; font-family: 'Lora', sans-serif; }
-    .article-content p { margin-bottom: 1.5em; } /* 确保段落间距正常 */
+    .article-content p { margin-bottom: 1.5em; }
     
+    /* >>> 终极修复：强制杀掉首字下沉 <<< */
+    .article-content p::first-letter,
+    .article-content p:first-of-type::first-letter,
+    .article-content > p:first-child::first-letter {
+        float: none !important;
+        font-size: inherit !important;
+        line-height: inherit !important;
+        color: inherit !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-weight: normal !important;
+        font-family: inherit !important;
+    }
+
     .article-content img { max-width: 100% !important; height: auto !important; margin: 1em 0; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .article-content h1, .article-content h2 { margin-top: 1.5em; margin-bottom: 0.8em; font-family: 'Playfair Display', serif; }
     
