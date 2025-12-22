@@ -237,32 +237,33 @@ export function updateClock() {
     d.innerHTML = `<div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div><div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>${weatherHtml}${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}`;
 }
 
-// >>> 核心新增：Live2D 看板娘 <<<
+// >>> 核心修复：更快的 Live2D 源 <<<
 export function initLive2D() {
-    // 避免重复加载
     if (document.getElementById('live2d-script')) return;
 
     const script = document.createElement('script');
     script.id = 'live2d-script';
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/live2d-widget/3.1.4/L2Dwidget.min.js';
+    // 换成 fastly.jsdelivr.net，国内加载更快，不容易失败
+    script.src = 'https://fastly.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js';
     script.async = true;
     script.onload = () => {
         if (window.L2Dwidget) {
+            console.log("Live2D script loaded, initializing...");
             window.L2Dwidget.init({
                 "model": {
-                    // 使用经典的 Shizuku 模型 (和你发的网站一样)
-                    "jsonPath": "https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json",
+                    // 同样换成 fastly.jsdelivr.net 的模型源
+                    "jsonPath": "https://fastly.jsdelivr.net/npm/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json",
                     "scale": 1
                 },
                 "display": {
-                    "position": "left", // 放在左边，避免和右边的悬浮按钮冲突
+                    "position": "left",
                     "width": 150,
                     "height": 300,
-                    "hOffset": 0,
-                    "vOffset": -20
+                    "hOffset": 20, 
+                    "vOffset": 0
                 },
                 "mobile": {
-                    "show": false, // 手机端不显示，太占位置
+                    "show": true, // 强制在所有设备显示，方便调试
                     "scale": 0.5
                 },
                 "react": {
@@ -271,6 +272,9 @@ export function initLive2D() {
                 }
             });
         }
+    };
+    script.onerror = () => {
+        console.error("Live2D script failed to load. Check network.");
     };
     document.body.appendChild(script);
 }
