@@ -68,8 +68,14 @@ export function initReadingProgress() {
     update();
 }
 
-// 4. 下雪特效
+// 4. 下雪特效 (已开启季节限定：11月-2月) ❄️
 export function initSnowEffect() {
+    // >>> 季节判断逻辑 <<<
+    const now = new Date();
+    const month = now.getMonth() + 1; // getMonth() 返回 0-11，所以要 +1
+    // 如果不是 11月, 12月, 1月, 2月，就不下雪，直接退出
+    if (![11, 12, 1, 2].includes(month)) return;
+
     const hero = document.querySelector('.hero');
     if (!hero) return; 
     if (hero.dataset.snowing) return;
@@ -247,15 +253,13 @@ export function updateClock() {
         lunarStr = lunarStr.replace(/^\d+年/, ''); 
     } catch(e) {}
 
-    // 组合天气信息 (增加国旗逻辑：高德通常返回国内城市，所以默认给个CN，如果是国外IP可能会有不同)
+    // 组合天气信息
     let weatherHtml = '';
-    // 如果还没获取到温度，就只显示城市
     let infoText = weatherData.city;
     if (weatherData.weather) {
         infoText += ` · ${weatherData.weather} ${weatherData.temp}°C`;
     }
     
-    // IP 属地小国旗 (高德主要做国内，简单判断)
     let flag = '🇨🇳'; 
     if (weatherData.city === '定位中...') flag = '🌏';
     if (weatherData.city === '定位失败' || weatherData.city === 'API 错误') flag = '⚠️';
