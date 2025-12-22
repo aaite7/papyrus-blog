@@ -1,13 +1,13 @@
 // src/lib/ui.js
 
-// >>> 全局变量：用于存储天气信息，供时钟使用 <<<
+// >>> 全局变量：用于存储天气信息 <<<
 let weatherData = {
-    city: '',
+    city: '定位中...',
     weather: '',
     temp: '',
     icon: ''
 };
-const AMAP_KEY = "41151e8e6a20ccd713ae595cd3236735"; // 你的高德 KEY
+const AMAP_KEY = "41151e8e6a20ccd713ae595cd3236735"; 
 
 // 1. 骨架屏
 export function renderSkeleton() {
@@ -138,39 +138,46 @@ export function initLightbox() {
     });
 }
 
-// --- >>> 核心功能：天气与时钟整合 <<< ---
+// --- >>> 核心功能：天气与时钟 (增强修复版) <<< ---
 
-// 7. 初始化天气 (IP定位 + 天气查询)
+// 7. 初始化天气
 export async function initWeather() {
+    console.log("Start initializing weather..."); // 调试日志
     try {
         // A. 获取 IP 定位
         const ipRes = await fetch(`https://restapi.amap.com/v3/ip?key=${AMAP_KEY}`);
         const ipData = await ipRes.json();
-        
+        console.log("IP Data:", ipData); // 调试日志
+
         if (ipData.status === '1' && ipData.adcode) {
             // B. 获取天气
             const weatherRes = await fetch(`https://restapi.amap.com/v3/weather/weatherInfo?city=${ipData.adcode}&key=${AMAP_KEY}`);
             const wData = await weatherRes.json();
-            
+            console.log("Weather Data:", wData); // 调试日志
+
             if (wData.status === '1' && wData.lives && wData.lives.length > 0) {
                 const live = wData.lives[0];
                 weatherData = {
                     city: live.city,
                     weather: live.weather,
                     temp: live.temperature,
-                    icon: getWeatherIcon(live.weather) // 简单的图标映射
+                    icon: getWeatherIcon(live.weather)
                 };
-                // 立即刷新一次时钟以显示天气
                 updateClock();
             }
+        } else {
+            weatherData.city = '定位失败';
+            updateClock();
         }
     } catch (e) {
         console.error("Weather fetch failed:", e);
+        weatherData.city = '网络错误';
+        updateClock();
     }
 }
 
-// 简单的天气图标映射辅助函数
 function getWeatherIcon(text) {
+    if (!text) return '🌡️';
     if (text.includes('晴')) return '☀️';
     if (text.includes('云') || text.includes('阴')) return '☁️';
     if (text.includes('雨')) return '🌧️';
@@ -180,10 +187,33 @@ function getWeatherIcon(text) {
     return '🌡️';
 }
 
-// 8. 时钟渲染 (含农历 + 天气)
+// 8. 时钟渲染 (自动创建容器)
 export function updateClock() {
-    const d = document.getElementById('clock-display');
-    if(!d) return;
+    // >>> 自动修复：如果找不到时钟容器，就自动创建一个在右上角 <<<
+    let d = document.getElementById('clock-display');
+    if(!d) {
+        d = document.createElement('div');
+        d.id = 'clock-display';
+        // 设置固定样式：右上角悬浮
+        d.style.position = 'fixed';
+        d.style.top = '20px';
+        d.style.right = '20px';
+        d.style.textAlign = 'right';
+        d.style.zIndex = '999';
+        d.style.color = '#333'; // 默认深色
+        d.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)'; // 加点白边防背景干扰
+        d.style.fontFamily = "'Lora', serif";
+        document.body.appendChild(d);
+    }
+
+    // 检测黑夜模式调整颜色
+    if (document.body.classList.contains('dark-mode')) {
+        d.style.color = '#e0e0e0';
+        d.style.textShadow = 'none';
+    } else {
+        d.style.color = '#333';
+        d.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
+    }
 
     const n = new Date();
     
@@ -198,24 +228,22 @@ export function updateClock() {
         lunarStr = lunarStr.replace(/^\d+年/, ''); 
     } catch(e) {}
 
-    // 组合 HTML：时间 + 日期 + (农历 | 天气)
-    // 如果有天气数据，就显示；否则显示农历
-    let extraInfo = '';
+    // 组合显示内容
+    let weatherHtml = '';
+    // 只要有天气数据，或者正在定位，都显示
     if (weatherData.city) {
-        extraInfo = `
-            <div style="font-size: 0.8rem; opacity: 0.7; margin-top: 4px; color: #D4AF37;">
-                ${weatherData.icon} ${weatherData.city} · ${weatherData.weather} ${weatherData.temp}°C
+        weatherHtml = `
+            <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px; color: #D4AF37; font-weight: bold;">
+                ${weatherData.icon || ''} ${weatherData.city} ${weatherData.weather ? '· ' + weatherData.weather : ''} ${weatherData.temp ? weatherData.temp + '°C' : ''}
             </div>
-            <div style="font-size: 0.7rem; opacity: 0.5; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>
         `;
-    } else {
-        extraInfo = lunarStr ? `<div style="font-size: 0.8rem; opacity: 0.6; color: #D4AF37; margin-top: 2px; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : '';
     }
 
     d.innerHTML = `
-        <div style="font-size: 1.1rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div>
-        <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px;">${dateStr}</div>
-        ${extraInfo}
+        <div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div>
+        <div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>
+        ${weatherHtml}
+        ${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}
     `;
 }
 
