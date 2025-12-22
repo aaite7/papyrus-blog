@@ -236,43 +236,43 @@ export function updateClock() {
     d.innerHTML = `<div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div><div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>${weatherHtml}${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}`;
 }
 
-// >>> 核心修复：使用国内极速 CDN 加载 Live2D <<<
+// >>> 核心修复：改回使用 unpkg 源 <<<
 export function initLive2D() {
     if (document.getElementById('live2d-script')) return;
 
-    console.log("Starting Live2D load...");
     const script = document.createElement('script');
     script.id = 'live2d-script';
-    // 换用 fastly.jsdelivr.net (国内访问极快)
-    script.src = 'https://fastly.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/live2d.min.js';
+    // 使用 unpkg 源加载 L2Dwidget
+    script.src = 'https://unpkg.com/live2d-widget@3.1.4/lib/L2Dwidget.min.js';
     script.async = true;
     script.onload = () => {
-        console.log("Live2D core loaded.");
-        if (window.loadlive2d) {
-            // Shizuku 模型 (也换用 fastly.jsdelivr.net)
-            const modelUrl = 'https://fastly.jsdelivr.net/npm/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json';
-            
-            // 动态插入 canvas，避免 L2Dwidget 自动生成的 canvas 被遮挡
-            // 注意：stevenjoezhang 的版本使用的是 loadlive2d 函数，而不是 L2Dwidget.init
-            let canvas = document.createElement('canvas');
-            canvas.id = 'live2d';
-            canvas.width = 280;
-            canvas.height = 800;
-            canvas.style.position = 'fixed';
-            canvas.style.left = '0px';  // 靠左
-            canvas.style.bottom = '0px'; // 靠底
-            canvas.style.zIndex = '99999'; // 强制顶层
-            canvas.style.width = '140px'; // 缩放显示
-            canvas.style.height = '400px';
-            canvas.style.pointerEvents = 'none'; // 默认不挡鼠标，只有模型区域挡
-            document.body.appendChild(canvas);
-
-            window.loadlive2d("live2d", modelUrl);
-            console.log("Live2D model loaded.");
+        if (window.L2Dwidget) {
+            window.L2Dwidget.init({
+                "model": {
+                    // 使用 unpkg 源加载 Shizuku 模型
+                    "jsonPath": "https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json",
+                    "scale": 1
+                },
+                "display": {
+                    "position": "left",
+                    "width": 150,
+                    "height": 300,
+                    "hOffset": 0,
+                    "vOffset": -20
+                },
+                "mobile": {
+                    "show": true, // 保持在手机上也尝试显示，方便调试
+                    "scale": 0.5
+                },
+                "react": {
+                    "opacityDefault": 0.9,
+                    "opacityOnHover": 1
+                }
+            });
         }
     };
-    script.onerror = (e) => {
-        console.error("Live2D script load failed. Check network.", e);
+    script.onerror = () => {
+        console.error("Live2D script failed to load. unpkg might be slow.");
     };
     document.body.appendChild(script);
 }
