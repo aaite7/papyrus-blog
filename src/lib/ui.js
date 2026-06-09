@@ -2,13 +2,57 @@
 
 // >>> 全局变量：用于存储天气信息 <<<
 let weatherData = {
-    city: '定位中...',
+    city: '南昌',
     weather: '',
     temp: '',
     icon: '',
-    province: ''
+    province: '江西'
 };
 const AMAP_KEY = import.meta.env.VITE_AMAP_KEY; 
+const NANCHANG_ADICODE = '360100'; // 南昌行政区划代码
+
+/**
+ * 图片懒加载 - 使用 Intersection Observer
+ */
+export function initLazyLoad() {
+  if (!('IntersectionObserver' in window)) {
+    // 降级处理：直接加载所有图片
+    document.querySelectorAll('img[data-src]').forEach(img => {
+      img.src = img.dataset.src;
+      img.removeAttribute('data-src');
+    });
+    return;
+  }
+  
+  const imageObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target;
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+        img.classList.add('loaded');
+        observer.unobserve(img);
+      }
+    });
+  }, {
+    rootMargin: '50px 0px',
+    threshold: 0.01
+  });
+  
+  document.querySelectorAll('img[data-src]').forEach(img => {
+    imageObserver.observe(img);
+  });
+}
+
+/**
+ * 预加载图片
+ * @param {string} src - 图片 URL
+ */
+export function preloadImage(src) {
+  if (!src) return;
+  const img = new Image();
+  img.src = src;
+}
 
 // 1. 骨架屏
 export function renderSkeleton() {
@@ -159,28 +203,29 @@ function loadAMapScript() {
 export async function initWeather() {
     try {
         await loadAMapScript();
-        const citySearch = new window.AMap.CitySearch();
-        citySearch.getLocalCity(function (status, result) {
-            if (status === 'complete' && result.info === 'OK') {
-                const adcode = result.adcode;
-                weatherData.city = result.city || result.province;
-                const weather = new window.AMap.Weather();
-                weather.getLive(adcode, function(err, data) {
-                    if (!err) {
-                        weatherData.weather = data.weather;
-                        weatherData.temp = data.temperature;
-                        weatherData.icon = getWeatherIcon(data.weather);
-                        updateClock();
-                    }
-                });
-                updateClock();
+        const weather = new window.AMap.Weather();
+        
+        // 直接获取南昌天气，不再定位
+        weather.getLive(NANCHANG_ADICODE, function(err, data) {
+            if (!err && data) {
+                weatherData.weather = data.weather;
+                weatherData.temp = data.temperature;
+                weatherData.icon = getWeatherIcon(data.weather);
+                weatherData.city = data.city || '南昌';
             } else {
-                weatherData.city = '定位失败';
-                updateClock();
+                // 获取失败时使用默认值
+                weatherData.weather = '晴';
+                weatherData.temp = '25';
+                weatherData.icon = '☀️';
             }
+            updateClock();
         });
     } catch (e) {
-        weatherData.city = 'API 错误';
+        console.error('天气加载失败:', e);
+        weatherData.city = '南昌';
+        weatherData.weather = '晴';
+        weatherData.temp = '25';
+        weatherData.icon = '☀️';
         updateClock();
     }
 }
@@ -226,9 +271,7 @@ export function updateClock() {
     if (weatherData.weather) infoText += ` · ${weatherData.weather} ${weatherData.temp}°C`;
     
     let flag = '🇨🇳'; 
-    if (weatherData.city === '定位中...') flag = '🌏';
-    if (weatherData.city === '定位失败' || weatherData.city === 'API 错误') flag = '⚠️';
-
+    
     if (weatherData.city) {
         weatherHtml = `<div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px; color: #D4AF37; font-weight: bold;">${flag} ${weatherData.icon || ''} ${infoText}</div>`;
     }

@@ -1,0 +1,13 @@
+<!-- 古风装饰元素 SVG -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- 卷轴装饰 -->
+  <g class="scroll-decoration">
+    <rect x="20" y="40" width="160" height="120" rx="8" fill="#f4ebe1" stroke="#D4AF37" stroke-width="2"/>
+    <rect x="10" y="30" width="180" height="20" rx="4" fill="#D4AF37"/>
+    <rect x="10" y="150" width="180" height="20" rx="4" fill="#D4AF37"/>
+    <circle cx="30" cy="40" r="8" fill="#B8860B"/>
+    <circle cx="170" cy="40" r="8" fill="#B8860B"/>
+    <circle cx="30" cy="160" r="8" fill="#B8860B"/>
+    <circle cx="170" cy="160" r="8" fill="#B8860B"/>
+  </g>
+</svg>

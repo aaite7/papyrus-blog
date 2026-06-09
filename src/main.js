@@ -3,6 +3,18 @@ import { supabase } from './lib/supabase.js';
 import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
 import * as Views from './lib/views.js';
+import { postsService } from './lib/posts.js';
+import { injectDecorations } from './lib/decorations.js';
+import { makeCardsFocusable, initKeyboardNavigation } from './lib/keyboard-nav.js';
+import { optimizeExistingImages } from './lib/image-optimizer.js';
+import { initGlobalErrorHandler } from './lib/error-boundary.js';
+import { initAnalytics } from './lib/analytics.js';
+import { injectFeedLinks } from './lib/rss-generator.js';
+import { initAutoDarkMode, toggleDarkModeManually } from './lib/auto-dark-mode.js';
+import { initLatestCommentsWidget } from './lib/comments-visualization.js';
+import { renderArchivePage } from './lib/archive.js';
+import { initInstantSearch } from './lib/instant-search.js';
+import { initI18n, initLanguageSwitcher } from './lib/i18n.js';
 
 const APP = document.getElementById('app');
 const state = { isAdmin: false, searchQuery: '' };
@@ -40,6 +52,11 @@ const router = {
             if (UI.initSnowEffect) UI.initSnowEffect();
             // 启动 Live2D
             if (UI.initLive2D) UI.initLive2D();
+            // 加载最新评论
+            setTimeout(initLatestCommentsWidget, 500);
+        }
+        else if (path === '/archive') {
+            await renderArchivePage(APP);
         }
         else if (path === '/login') Views.renderLogin(APP, this);
         else if (path === '/admin') state.isAdmin ? await Views.renderAdmin(APP, this) : this.navigate('/login');
@@ -102,6 +119,43 @@ function initShortcuts() {
 
 document.addEventListener('DOMContentLoaded', () => {
   Styles.injectGlobalStyles();
+  if (UI.loadPrism) UI.loadPrism();
+  if (UI.initSelectionSharer) UI.initSelectionSharer();
+  if (UI.initReadingProgress) UI.initReadingProgress();
+  
+  // 初始化 i18n
+  initI18n();
+  
+  // 初始化全局错误处理
+  initGlobalErrorHandler();
+  
+  // 初始化分析追踪
+  initAnalytics();
+  
+  // 初始化自动暗黑模式
+  initAutoDarkMode({ mode: 'smart', respectSystem: true });
+  
+  // 注入 RSS/Atom Feed 链接
+  injectFeedLinks();
+  
+  // 初始化实时搜索
+  initInstantSearch();
+  
+  // 初始化语言切换器
+  initLanguageSwitcher();
+  
+  // 优化图片
+  setTimeout(() => optimizeExistingImages(), 500);
+  
+  // 装饰样式
+  injectDecorations();
+  
+  // 键盘导航
+  const initCardNav = () => {
+    makeCardsFocusable();
+    initKeyboardNavigation();
+  };
+  setTimeout(initCardNav, 200);
   if(UI.loadPrism) UI.loadPrism();
   if(UI.initSelectionSharer) UI.initSelectionSharer();
   if(UI.initReadingProgress) UI.initReadingProgress();
@@ -122,9 +176,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.getElementById('dark-mode-toggle');
   if(toggle) toggle.addEventListener('click', (e) => {
       e.preventDefault();
-      const isDark = document.body.classList.toggle('dark-mode');
-      localStorage.setItem('darkMode', isDark);
-      e.target.textContent = isDark ? '☀' : '☾';
+      // 使用手动切换（会禁用自动切换）
+      toggleDarkModeManually();
   });
 
   supabase.auth.onAuthStateChange((event, session) => {

@@ -3,23 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimalist - Ancient Wisdom, Modern Stories</title>
-    <meta name="description" content="A blog inspired by ancient scrolls and handwritten manuscripts. Share thoughts, stories, and wisdom in an elegant, timeless design.">
-    <meta name="keywords" content="blog, writing, thoughts, stories, philosophy, journal">
-    <meta name="author" content="Minimalist Blog">
-    <meta name="robots" content="index, follow">
+    
+    <!-- Primary Meta Tags -->
+    <title>Minimalist - 古风极简博客 | 南昌 | 分享智慧与故事</title>
+    <meta name="title" content="Minimalist - 古风极简博客 | 南昌 | 分享智慧与故事">
+    <meta name="description" content="Minimalist 是一个受古代卷轴和手写稿启发的极简博客，分享 pensamientos、故事和智慧。位于南昌，提供优雅的阅读体验。支持暗色模式、离线阅读、评论互动。">
+    <meta name="keywords" content="博客，极简主义，古风，南昌博客，写作，阅读，技术博客，生活感悟，个人博客，中文博客，Minimalist Blog, Nanchang Blog">
+    <meta name="author" content="Minimalist Blog Team">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow">
+    <meta name="bingbot" content="index, follow">
+    <meta name="baiduspider" content="index, follow">
     <link rel="canonical" href="https://yourdomain.com/">
-    <link rel="stylesheet" href="public/dark-mode.css">
-
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/public/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/public/favicon.svg">
+    <link rel="mask-icon" href="/public/favicon.svg" color="#D4AF37">
+    <meta name="theme-color" content="#D4AF37">
+    <meta name="application-name" content="Minimalist Blog">
+    
+    <!-- Geo Tags (地理位置优化) -->
+    <meta name="geo.region" content="CN-JX">
+    <meta name="geo.placename" content="南昌">
+    <meta name="geo.position" content="28.682892;115.857844">
+    <meta name="ICBM" content="28.682892, 115.857844">
+    
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://yourdomain.com/">
-    <meta property="og:title" content="Minimalist - Ancient Wisdom, Modern Stories">
-    <meta property="og:description" content="A blog inspired by ancient scrolls and handwritten manuscripts">
     <meta property="og:site_name" content="Minimalist Blog">
-
+    <meta property="og:title" content="Minimalist - 古风极简博客 | 分享智慧与故事">
+    <meta property="og:description" content="一个受古代卷轴启发的极简博客，优雅的阅读体验，支持离线阅读和评论互动。">
+    <meta property="og:locale" content="zh_CN">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:image" content="/public/og-image.svg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Minimalist Blog - 古风极简博客封面图">
+    
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Minimalist - Ancient Wisdom, Modern Stories">
-    <meta name="twitter:description" content="A blog inspired by ancient scrolls and handwritten manuscripts">
+    <meta name="twitter:site" content="@yourdomain">
+    <meta name="twitter:creator" content="@yourdomain">
+    <meta name="twitter:title" content="Minimalist - 古风极简博客 | 分享智慧与故事">
+    <meta name="twitter:description" content="一个受古代卷轴启发的极简博客，优雅的阅读体验。">
+    <meta name="twitter:image" content="/public/twitter-image.svg">
+    <meta name="twitter:image:alt" content="Minimalist Blog 封面图">
+    
+    <!-- 结构化数据 -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Minimalist Blog",
+      "alternateName": "古风极简博客",
+      "url": "https://yourdomain.com/",
+      "description": "一个受古代卷轴和手写稿启发的极简博客",
+      "inLanguage": "zh-CN",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Minimalist Blog Team",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://yourdomain.com/logo.png",
+          "width": 600,
+          "height": 60
+        }
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://yourdomain.com/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Blog Admin"
+      }
+    }
+    </script>
+    
+    <!-- Local Business Schema (地理位置) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "Minimalist Blog",
+      "description": "位于南昌的极简主义博客平台",
+      "areaServed": {
+        "@type": "City",
+        "name": "南昌",
+        "alternateName": "Nanchang"
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "JX",
+        "addressCountry": "CN",
+        "addressLocality": "南昌"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 28.682892,
+        "longitude": 115.857844
+      },
+      "url": "https://yourdomain.com/",
+      "image": "https://yourdomain.com/logo.png",
+      "inLanguage": "zh-CN"
+    }
+    </script>
+    
+    <!-- Preconnect to external resources for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://webapi.amap.com">
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <link rel="stylesheet" href="public/dark-mode.css">
+    <link rel="sitemap" type="application/xml" href="/public/sitemap.xml">
 
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:wght@700;900&family=Caveat:wght@600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.8/dist/purify.min.js" defer></script>
@@ -1101,6 +1203,10 @@
         }
 
         .fade-in { animation: fadeInUp 0.8s ease-out; }
+        
+        /* 无障碍跳过链接 */
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 9999; padding: 10px 20px; background: #D4AF37; color: #fff; font-weight: bold; text-decoration: none; border-radius: 0 0 4px 0; }
+        .skip-link:focus { left: 0; }
     </style>
 </head>
 <body>
@@ -1108,12 +1214,12 @@
 <div class="scroll-decoration left"></div>
 <div class="scroll-decoration right"></div>
 
-<nav>
+<nav role="navigation" aria-label="主导航">
     <div class="nav-container">
-        <div class="logo" data-link="/">Minimalist</div>
+        <div class="logo" data-link="/" role="button" aria-label="返回首页">Minimalist</div>
         <div class="nav-links" style="display: flex; align-items: center; gap: 24px;">
-            <div id="clock-display" style="font-family: 'Caveat', cursive; color: var(--sepia); text-align: right; line-height: 1.2;"></div>
-            <button class="nav-btn" id="dark-mode-toggle" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;">☾</button>
+            <div id="clock-display" style="font-family: 'Caveat', cursive; color: var(--sepia); text-align: right; line-height: 1.2;" aria-label="当前时间"></div>
+            <button class="nav-btn" id="dark-mode-toggle" style="font-size: 1.5rem; background: none; border: none; cursor: pointer;" aria-label="切换暗黑模式">☾</button>
             <button class="nav-btn" data-link="/admin" id="admin-link">Scribe</button>
             <button class="nav-btn hidden" id="logout-btn">Depart</button>
         </div>

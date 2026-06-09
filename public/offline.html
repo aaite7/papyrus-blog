@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="offline-page">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>离线了 - Minimalist Blog</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --parchment: #f4ebe1;
+      --ink: #2b1810;
+      --gold: #d4af37;
+      --burgundy: #800020;
+    }
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: linear-gradient(135deg, var(--parchment) 0%, #e8dcc8 100%);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .offline-container {
+      text-align: center;
+      max-width: 600px;
+      padding: 60px 40px;
+      background: #fff;
+      border-radius: 12px;
+      border: 3px double var(--gold);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    .offline-icon {
+      font-size: 5rem;
+      margin-bottom: 30px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      color: var(--burgundy);
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .offline-tips {
+      background: rgba(212, 175, 55, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      text-align: left;
+      margin-bottom: 30px;
+    }
+    .offline-tips h3 {
+      font-size: 1.2rem;
+      color: var(--burgundy);
+      margin-bottom: 15px;
+    }
+    .offline-tips ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .offline-tips li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+    }
+    .offline-tips li::before {
+      content: '✦';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+    }
+    .retry-btn {
+      background: linear-gradient(135deg, var(--gold) 0%, #B8860B 100%);
+      color: #fff;
+      border: none;
+      padding: 14px 40px;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .retry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+    }
+    .connection-status {
+      margin-top: 20px;
+      font-size: 0.95rem;
+      color: #888;
+    }
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      background: #ccc;
+    }
+    .status-indicator.online {
+      background: #07c160;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @media (max-width: 768px) {
+      .offline-container { padding: 40px 20px; }
+      h1 { font-size: 1.8rem; }
+      .offline-icon { font-size: 3.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">📴</div>
+    <h1>卷轴离线了</h1>
+    <p>
+      您目前没有网络连接，无法访问新的文章内容。<br>
+      但您可以查看已缓存的页面或稍后重试。
+    </p>
+    
+    <div class="offline-tips">
+      <h3>📖 离线时可以：</h3>
+      <ul>
+        <li>阅读已缓存的文章</li>
+        <li>查看已下载的评论</li>
+        <li>撰写评论草稿（网络恢复后自动发送）</li>
+        <li>浏览书签的文章</li>
+      </ul>
+    </div>
+    
+    <button class="retry-btn" onclick="window.location.reload()">
+      🔄 重新连接
+    </button>
+    
+    <div class="connection-status">
+      <span class="status-indicator" id="status-indicator"></span>
+      <span id="status-text">检查连接中...</span>
+    </div>
+  </div>
+  
+  <script>
+    // 监听网络状态
+    function updateStatus() {
+      const indicator = document.getElementById('status-indicator');
+      const text = document.getElementById('status-text');
+      
+      if (navigator.onLine) {
+        indicator.classList.add('online');
+        text.textContent = '已连接！正在重新加载...';
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        indicator.classList.remove('online');
+        text.textContent = '当前离线';
+      }
+    }
+    
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    
+    // 初始检查
+    updateStatus();
+    
+    // 定期检查
+    setInterval(updateStatus, 5000);
+  </script>
+</body>
+</html>
