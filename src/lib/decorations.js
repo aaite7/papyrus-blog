@@ -9,8 +9,10 @@ export function injectDecorations() {
   style.id = styleId;
   style.innerHTML = `
     /* ==================== 新首页布局 ==================== */
-    .home-layout { display: grid; grid-template-columns: 1fr 340px; gap: 40px; max-width: 1400px; margin: 0 auto; padding: 0 20px; }
-    @media (max-width: 1024px) { .home-layout { grid-template-columns: 1fr; } .sidebar { position: static !important; margin-top: 40px; } }
+    .home-layout { display: grid; grid-template-columns: 1fr 360px; gap: 50px; max-width: 1600px; margin: 0 auto; padding: 0 40px; }
+    .main-content { min-width: 0; }
+    @media (max-width: 1200px) { .home-layout { grid-template-columns: 1fr; gap: 40px; } .sidebar { position: static !important; margin-top: 40px; } }
+    @media (max-width: 768px) { .home-layout { padding: 0 20px; } }
     
     /* Hero 区域增强 */
     .hero { position: relative; overflow: hidden; z-index: 1; text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #f4ebe1 0%, #fffef7 100%); border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
