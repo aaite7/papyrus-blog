@@ -9,7 +9,7 @@ export function injectDecorations() {
   style.id = styleId;
   style.innerHTML = `
     /* ==================== 新首页布局 ==================== */
-    .home-layout { display: grid; grid-template-columns: 1fr 360px; gap: 50px; max-width: 1600px; margin: 0 auto; padding: 0 40px; }
+    .home-layout { display: grid; grid-template-columns: 1fr 320px; gap: 60px; max-width: 1500px; margin: 0 auto; padding: 0 50px; }
     .main-content { min-width: 0; }
     @media (max-width: 1200px) { .home-layout { grid-template-columns: 1fr; gap: 40px; } .sidebar { position: static !important; margin-top: 40px; } }
     @media (max-width: 768px) { .home-layout { padding: 0 20px; } }

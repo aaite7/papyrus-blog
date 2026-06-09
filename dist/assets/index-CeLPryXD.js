@@ -720,7 +720,7 @@ ${v}`}class I extends Error{constructor({message:e,code:t,cause:n,name:i}){var s
       ${ot()}
     `,document.querySelectorAll("[data-pin]").forEach(n=>{n.addEventListener("click",async i=>{const s=i.target.dataset.pin,o=t.find(a=>a.id==s);try{await V.updatePost(s,{is_pinned:!o.is_pinned}),e.route(),B(o.is_pinned?"Unpinned":"Pinned to top!","success")}catch(a){B(a.message,"error")}})}),document.querySelectorAll("[data-del]").forEach(n=>{n.addEventListener("click",async i=>{if(confirm("Delete forever?"))try{await V.deletePost(i.target.dataset.del),e.route(),B("Deleted.","info")}catch(s){B(s.message,"error")}})})}catch(t){r.innerHTML=`<div class="error">Failed to load admin panel: ${t.message}</div>`}}async function Wr(r,e,t){try{let n={title:"",content:"",category:"",tags:[],image:"",image_fit:"contain",icon:""};if(e&&(n=await V.getPostById(e),!n)){t.navigate("/admin");return}r.innerHTML='<div class="form-container">Editor loading...</div>'}catch(n){r.innerHTML=`<div class="error">Failed to load editor: ${n.message}</div>`}}function Za(){const r="decorations-global-styles",e=document.getElementById(r);e&&e.remove();const t=document.createElement("style");t.id=r,t.innerHTML=`
     /* ==================== 新首页布局 ==================== */
-    .home-layout { display: grid; grid-template-columns: 1fr 360px; gap: 50px; max-width: 1600px; margin: 0 auto; padding: 0 40px; }
+    .home-layout { display: grid; grid-template-columns: 1fr 320px; gap: 60px; max-width: 1500px; margin: 0 auto; padding: 0 50px; }
     .main-content { min-width: 0; }
     @media (max-width: 1200px) { .home-layout { grid-template-columns: 1fr; gap: 40px; } .sidebar { position: static !important; margin-top: 40px; } }
     @media (max-width: 768px) { .home-layout { padding: 0 20px; } }
