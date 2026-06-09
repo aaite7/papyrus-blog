@@ -1,6 +1,7 @@
 // src/lib/comments-visualization.js
 
 import { commentsService } from './comments.js';
+import { supabase } from './supabase.js';
 
 /**
  * 获取文章评论数
@@ -20,9 +21,15 @@ export async function getCommentCount(postId) {
  */
 export async function getLatestComments(limit = 5) {
   try {
+    // 检查 supabase 是否可用
+    if (!supabase) {
+      console.log('[Comments] Supabase not available, skipping widget');
+      return [];
+    }
+    
     // 由于 Supabase 结构限制，需要获取所有文章的评论
     // 实际应该优化数据库查询
-    const { data: allComments, error } = await window.supabase
+    const { data: allComments, error } = await supabase
       .from('comments')
       .select('*')
       .order('created_at', { ascending: false })
