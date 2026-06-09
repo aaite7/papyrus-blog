@@ -24,26 +24,18 @@ export async function getLatestComments(limit = 5) {
     // 实际应该优化数据库查询
     const { data: allComments, error } = await window.supabase
       .from('comments')
-      .select(`
-        id,
-        post_id,
-        content,
-        author_name,
-        created_at,
-        posts (
-          id,
-          title
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(limit);
     
-    if (error) throw error;
+    if (error) {
+      // comments 表可能不存在，静默失败
+      return [];
+    }
     
     return allComments.map(c => ({
       id: c.id,
       post_id: c.post_id,
-      post_title: c.posts?.title || '未知文章',
       content: c.content,
       author_name: c.author_name,
       created_at: c.created_at
