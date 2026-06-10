@@ -216,6 +216,35 @@ document.addEventListener('DOMContentLoaded', () => {
       // 使用手动切换（会禁用自动切换）
       toggleDarkModeManually();
   });
+  
+  // 汉堡菜单切换
+  const navToggle = document.getElementById('nav-toggle');
+  const navLinks = document.querySelector('.nav-links');
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', () => {
+      navToggle.classList.toggle('active');
+      navLinks.classList.toggle('active');
+      navToggle.setAttribute('aria-expanded', navToggle.classList.contains('active'));
+    });
+    
+    // 点击导航链接后关闭菜单
+    navLinks.querySelectorAll('.nav-btn, a').forEach(link => {
+      link.addEventListener('click', () => {
+        navToggle.classList.remove('active');
+        navLinks.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+    
+    // 点击外部关闭菜单
+    document.addEventListener('click', (e) => {
+      if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) {
+        navToggle.classList.remove('active');
+        navLinks.classList.remove('active');
+        navToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
 
   supabase.auth.onAuthStateChange((event, session) => {
     state.isAdmin = !!session;

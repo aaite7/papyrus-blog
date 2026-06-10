@@ -125,7 +125,7 @@ export function initLazyLoadObserver(threshold = 0.1) {
 }
 
 /**
- * 优化现有图片
+ * 优化现有图片 - 增强版
  */
 export function optimizeExistingImages(container = document) {
   const images = container.querySelectorAll('img[src]');
@@ -150,7 +150,87 @@ export function optimizeExistingImages(container = document) {
     if (!img.alt) {
       img.alt = '文章图片';
     }
+    
+    // 添加淡入效果类
+    img.classList.add('lazy-image');
+    
+    // 添加加载完成监听
+    img.addEventListener('load', () => {
+      img.classList.add('loaded');
+    }, { once: true });
   });
+  
+  // 为文章卡片图片添加 Intersection Observer 预加载
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          // 提前加载：当图片进入视口前 200px 开始加载
+          const src = img.dataset.src || img.src;
+          const srcset = img.dataset.srcset || img.srcset;
+          
+          if (src && img.dataset.src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+          }
+          
+          if (srcset && img.dataset.srcset) {
+            img.srcset = srcset;
+            img.removeAttribute('data-srcset');
+          }
+          
+          imageObserver.unobserve(img);
+        }
+      });
+    }, { rootMargin: '200px' });
+    
+    container.querySelectorAll('img[src]').forEach(img => {
+      imageObserver.observe(img);
+    });
+  }
+}
+
+/**
+ * 创建带 LQIP 占位图的图片卡片
+ */
+export function createImageWithLQIP(imageUrl, alt, options = {}) {
+  const {
+    width = 800,
+    height = 600,
+    objectFit = 'cover'
+  } = options;
+  
+  const blurPlaceholder = generateBlurHashPlaceholder('#f4ebe1');
+  const webpUrl = optimizeImageUrl(imageUrl);
+  
+  return `
+    <div class="image-wrapper lazy-container" style="position:relative;overflow:hidden;background:${blurPlaceholder};">
+      <picture>
+        <source srcset="${escapeHtml(webpUrl)}" type="image/webp">
+        <img
+          data-src="${escapeHtml(imageUrl)}"
+          data-srcset="${escapeHtml(webpUrl)}"
+          alt="${escapeHtml(alt)}"
+          width="${width}"
+          height="${height}"
+          loading="lazy"
+          decoding="async"
+          style="width:100%; height:100%; object-fit:${objectFit}; opacity:0; transition:opacity 0.3s ease;"
+          class="lazy-image"
+          onload="this.style.opacity='1'; this.classList.add('loaded');"
+        >
+      </picture>
+      <div class="image-skeleton" style="position:absolute;inset:0;background:linear-gradient(90deg, #f4ebe1 25%, #f9f3eb 50%, #f4ebe1 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;"></div>
+    </div>
+    <style>
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      .lazy-image.loaded + .image-skeleton { display: none; }
+    </style>
+  `;
 }
 
 /**

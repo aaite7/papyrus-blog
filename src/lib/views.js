@@ -133,7 +133,7 @@ export async function renderHome(APP, state) {
         
         <aside class="sidebar">
           ${renderSearchWidget(state.searchQuery)}
-          ${renderProfileWidget()}
+          ${renderProfileWidget(state)}
           ${renderPopularPostsWidget(popularPosts)}
           ${renderTagsWidget(allTags)}
           ${renderTocWidget()}
@@ -305,12 +305,12 @@ function renderSearchWidget(searchQuery) {
 /**
  * 渲染个人简介小部件
  */
-function renderProfileWidget() {
+function renderProfileWidget(state) {
   return `
     <div class="widget widget-profile">
       <div class="profile-bg"></div>
       <div class="profile-avatar">
-        <span class="avatar-emoji">📚</span>
+        <span class="avatar-emoji">📖</span>
       </div>
       <div class="profile-info">
         <h3>Minimalist</h3>
@@ -896,6 +896,12 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
         ${renderSinglePostImage(post)}
         <article class="article-content">${injectHeadingIds(content)}</article>
         
+        <!-- 上一篇/下一篇导航 -->
+        <div class="post-navigation">
+          <div id="prev-post" class="nav-item nav-prev"></div>
+          <div id="next-post" class="nav-item nav-next"></div>
+        </div>
+        
         <div id="related-posts" style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee;">
           <h3 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">相关文章</h3>
           <div id="related-posts-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
@@ -930,6 +936,10 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     UI.initLightbox();
     UI.initReadingProgress();
     UI.initLazyLoad();
+    
+    // 初始化阅读进度追踪（带进度条）
+    const ReadingTracker = await import('./reading-progress.js');
+    ReadingTracker.initReadingTracker(id);
 
     updatePageMeta(post);
     addStructuredData(post);
@@ -943,9 +953,56 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     initReplyButtons(id, router);
     loadRelatedPosts(id, post.tags);
     initCardHoverPreload();
+    loadPostNavigation(id);
   } catch (err) {
     APP.innerHTML = `<div class="error">Failed to load post: ${err.message}</div>`;
     console.error(err);
+  }
+}
+
+/**
+ * 加载上一篇/下一篇文章导航
+ */
+async function loadPostNavigation(currentPostId) {
+  try {
+    const allPosts = await postsService.getAllPosts();
+    const sortedPosts = allPosts.sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+    
+    const currentIndex = sortedPosts.findIndex(p => p.id === currentPostId);
+    
+    if (currentIndex === -1) return;
+    
+    const prevPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
+    const nextPost = currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
+    
+    const prevEl = document.getElementById('prev-post');
+    const nextEl = document.getElementById('next-post');
+    
+    if (prevEl) {
+      prevEl.innerHTML = prevPost 
+        ? `<span class="nav-label">← 上一篇</span><h4 class="nav-title">${escapeHtml(prevPost.title)}</h4>`
+        : `<span class="nav-label">← 上一篇</span><div class="nav-empty">没有更早的文章</div>`;
+      
+      if (prevPost) {
+        prevEl.style.cursor = 'pointer';
+        prevEl.addEventListener('click', () => router.navigate(`/post/${prevPost.id}`));
+      }
+    }
+    
+    if (nextEl) {
+      nextEl.innerHTML = nextPost
+        ? `<span class="nav-label">下一篇 →</span><h4 class="nav-title">${escapeHtml(nextPost.title)}</h4>`
+        : `<span class="nav-label">下一篇 →</span><div class="nav-empty">没有更新的文章</div>`;
+      
+      if (nextPost) {
+        nextEl.style.cursor = 'pointer';
+        nextEl.addEventListener('click', () => router.navigate(`/post/${nextPost.id}`));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load post navigation:', err);
   }
 }
 
