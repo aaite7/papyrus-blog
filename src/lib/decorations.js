@@ -450,7 +450,7 @@ export function injectDecorations() {
     .archive-group.collapsed .archive-count { transform: rotate(180deg); }
     
     /* 表单样式（Login/Admin） */
-    .form-container { max-width: 420px; margin: 80px auto; padding: 50px 40px; background: #fff; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    .form-container { max-width: 900px; margin: 80px auto; padding: 50px 60px; background: #fff; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
     body.dark-mode .form-container { background: #1e1e1e; border-color: rgba(212, 175, 55, 0.5); }
     .form-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: #8B0000; text-align: center; margin-bottom: 30px; }
     body.dark-mode .form-title { color: #f0f0f0; }
