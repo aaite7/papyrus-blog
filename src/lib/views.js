@@ -807,13 +807,6 @@ function renderPostImage(post) {
     </div>
   `;
 }
-  
-  return `
-    <div class="single-image-container">
-      <img src="${post.image}" class="single-image" style="object-fit:${post.image_fit || 'contain'};">
-    </div>
-  `;
-}
 
 function initTOC(content) {
   const tocHeadings = generateTOC(content);
@@ -848,6 +841,158 @@ function initTOC(content) {
   
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
+}
+
+export async function renderPost(APP, id, router, updateMetaCallback) {
+  try {
+    const post = await postsService.getPostById(id);
+    if (!post) { 
+      APP.innerHTML = '<div class="error">Lost scroll...</div>'; 
+      return; 
+    }
+
+    const realViewCount = await getPostViewCount(id);
+    post.view_count = realViewCount || post.view_count || 0;
+
+    await updatePostView(id, post);
+
+    if (updateMetaCallback) updateMetaCallback(post);
+    
+    trackPageView(id, post.title);
+    
+    const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
+    const comments = await commentsService.getCommentsByPostId(id);
+    const likes = post.likes || 0;
+    const isLiked = localStorage.getItem(`liked_${id}`);
+
+    APP.innerHTML = `
+      <div id="reading-progress"></div>
+      <div id="toc"></div>
+
+      <div class="floating-bar">
+        <div class="action-btn ${isLiked ? 'liked' : ''}" id="btn-like">
+          ♥ <span class="btn-badge" id="l-cnt">${likes}</span>
+        </div>
+        <div class="action-btn" id="btn-print" title="打印文章">🖨️</div>
+        <div class="action-btn" id="btn-share">🔗</div>
+        <div class="action-btn" id="btn-top">⬆</div>
+      </div>
+
+      <div class="single-manuscript fade-in">
+        <div class="manuscript-header">
+          ${post.icon ? renderIcon(post.icon, 'single-icon') : ''}
+          <h1 class="single-title">${post.title}</h1>
+          <div class="single-meta">
+            Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count || 0} • ⏱ ${readingTime(post.content)} min read
+          </div>
+        </div>
+        
+        ${renderSinglePostImage(post)}
+        <article class="article-content">${injectHeadingIds(content)}</article>
+        
+        <div class="post-navigation">
+          <div id="prev-post" class="nav-item nav-prev"></div>
+          <div id="next-post" class="nav-item nav-next"></div>
+        </div>
+        
+        <div id="related-posts" style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee;">
+          <h3 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">相关文章</h3>
+          <div id="related-posts-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+            <div style="opacity: 0.5;">加载中...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="comments-section">
+        <div class="divider">✦ Comments (${comments.length}) ✦</div>
+        <div id="comments-list">
+          ${commentsService.renderComments(comments)}
+        </div>
+        <div class="form-container" style="margin-top:20px;">
+          <form id="comment-form">
+            <input type="hidden" id="parent-id" value="">
+            <input id="cn" placeholder="Name" required>
+            <input id="ce" placeholder="Email" required>
+            <textarea id="cc" placeholder="Comment..." required></textarea>
+            <button type="submit" class="btn-primary">Post</button>
+          </form>
+          <div id="reply-preview" style="display: none; margin-top: 10px; padding: 10px; background: #fffdf5; border-left: 3px solid #D4AF37;">
+            <span style="font-size: 0.85rem; color: #666;">正在回复:</span>
+            <span id="reply-to-name" style="font-weight: bold; margin-left: 5px;"></span>
+            <button id="cancel-reply" style="float: right; background: none; border: none; color: #999; cursor: pointer;">×</button>
+          </div>
+        </div>
+      </div>
+      ${renderFooter()}
+    `;
+
+    UI.initLightbox();
+    UI.initReadingProgress();
+    UI.initLazyLoad();
+    
+    const ReadingTracker = await import('./reading-progress.js');
+    ReadingTracker.initReadingTracker(id);
+
+    updatePageMeta(post);
+    addStructuredData(post);
+
+    if (generateTOC(post.content).length > 0) { 
+      initTOC(post.content);
+    }
+
+    initPostActions(id, likes);
+    initCommentForm(id, router);
+    initReplyButtons(id, router);
+    loadRelatedPosts(id, post.tags);
+    initCardHoverPreload();
+    loadPostNavigation(id);
+  } catch (err) {
+    APP.innerHTML = `<div class="error">Failed to load post: ${err.message}</div>`;
+    console.error(err);
+  }
+}
+
+async function loadPostNavigation(currentPostId) {
+  try {
+    const allPosts = await postsService.getAllPosts();
+    const sortedPosts = allPosts.sort((a, b) => 
+      new Date(b.created_at) - new Date(a.created_at)
+    );
+    
+    const currentIndex = sortedPosts.findIndex(p => p.id === currentPostId);
+    
+    if (currentIndex === -1) return;
+    
+    const prevPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
+    const nextPost = currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
+    
+    const prevEl = document.getElementById('prev-post');
+    const nextEl = document.getElementById('next-post');
+    
+    if (prevEl) {
+      prevEl.innerHTML = prevPost 
+        ? `<span class="nav-label">← 上一篇</span><h4 class="nav-title">${escapeHtml(prevPost.title)}</h4>`
+        : `<span class="nav-label">← 上一篇</span><div class="nav-empty">没有更早的文章</div>`;
+      
+      if (prevPost) {
+        prevEl.style.cursor = 'pointer';
+        prevEl.addEventListener('click', () => router.navigate(`/post/${prevPost.id}`));
+      }
+    }
+    
+    if (nextEl) {
+      nextEl.innerHTML = nextPost
+        ? `<span class="nav-label">下一篇 →</span><h4 class="nav-title">${escapeHtml(nextPost.title)}</h4>`
+        : `<span class="nav-label">下一篇 →</span><div class="nav-empty">没有更新的文章</div>`;
+      
+      if (nextPost) {
+        nextEl.style.cursor = 'pointer';
+        nextEl.addEventListener('click', () => router.navigate(`/post/${nextPost.id}`));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load post navigation:', err);
+  }
 }
 
 function initPostActions(postId, likes) {
