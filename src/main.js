@@ -108,12 +108,13 @@ function initShortcuts() {
             if (e.key === 'Escape') document.activeElement.blur();
             return;
         }
-        if (e.key === '/') {
+        const key = e.key || '';
+        if (key === '/') {
             e.preventDefault();
             document.getElementById('search')?.focus();
         }
-        if (e.key.toLowerCase() === 'j') window.scrollBy({ top: 300, behavior: 'smooth' });
-        if (e.key.toLowerCase() === 'k') window.scrollBy({ top: -300, behavior: 'smooth' });
+        if (key.toLowerCase() === 'j') window.scrollBy({ top: 300, behavior: 'smooth' });
+        if (key.toLowerCase() === 'k') window.scrollBy({ top: -300, behavior: 'smooth' });
     });
 }
 

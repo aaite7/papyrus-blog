@@ -49,30 +49,33 @@ export function initShortcuts() {
       return;
     }
     
+    // 保护：e.key 可能为 undefined
+    const key = e.key || '';
+    
     // / 聚焦搜索
-    if (e.key === '/') {
+    if (key === '/') {
       e.preventDefault();
       const searchInput = document.getElementById('search');
       if (searchInput) searchInput.focus();
     }
     
     // j 向下滚动
-    if (e.key.toLowerCase() === 'j') {
+    if (key.toLowerCase() === 'j') {
       window.scrollBy({ top: 300, behavior: 'smooth' });
     }
     
     // k 向上滚动
-    if (e.key.toLowerCase() === 'k') {
+    if (key.toLowerCase() === 'k') {
       window.scrollBy({ top: -300, behavior: 'smooth' });
     }
     
     // t 回到顶部
-    if (e.key.toLowerCase() === 't') {
+    if (key.toLowerCase() === 't') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     
     // g 跳到底部
-    if (e.key.toLowerCase() === 'g') {
+    if (key.toLowerCase() === 'g') {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
   });
