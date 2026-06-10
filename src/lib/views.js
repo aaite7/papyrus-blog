@@ -104,7 +104,7 @@ export async function renderHome(APP, state) {
 
     const mainContent = `
       ${renderHeroSection()}
-      <div class="divider">✦ ✦ ✦</div>
+      <div class="divider">⚜</div>
       <div class="search-scroll">
         <input type="search" id="search" placeholder="Seek words..." value="${state.searchQuery || ''}" aria-label="搜索文章" autocomplete="off">
       </div>
@@ -115,7 +115,7 @@ export async function renderHome(APP, state) {
           ${!state.searchQuery && state.currentPage === 1 && state.featuredPost ? renderFeaturedSection(state.featuredPost) : ''}
           
           <div class="section-title">
-            <h2><span class="title-icon">📜</span> ${state.selectedCategory ? `${state.selectedCategory} 文章` : '全部文章'}</h2>
+            <h2>${state.selectedCategory ? `${state.selectedCategory} 文章` : '全部文章'}</h2>
             <span class="post-count">${totalPosts} 篇</span>
           </div>
           
@@ -386,15 +386,20 @@ function renderTocWidget() {
  * 渲染分类筛选器
  */
 function renderCategoryFilter(categories, selected) {
-  if (!categories.length) return '';
+  if (!categories || !categories.length) return '';
+  
+  // 过滤掉 null/undefined/空字符串
+  const validCategories = categories.filter(cat => cat && cat.trim());
+  
+  if (!validCategories.length) return '';
   
   return `
-    <div class="category-filter" style="display: flex; gap: 10px; padding: 15px 0; overflow-x: auto; border-bottom: 1px solid rgba(212, 175, 55, 0.2);">
-      <button class="category-btn ${!selected ? 'active' : ''}" data-category="" style="padding: 8px 16px; border: 1px solid #D4AF37; border-radius: 20px; background: ${!selected ? '#D4AF37' : 'transparent'}; color: ${!selected ? '#fff' : '#D4AF37'}; cursor: pointer; white-space: nowrap; transition: 0.3s;">
+    <div class="category-filter">
+      <button class="category-btn ${!selected ? 'active' : ''}" data-category="">
         全部
       </button>
-      ${categories.map(cat => `
-        <button class="category-btn" data-category="${escapeHtml(cat)}" style="padding: 8px 16px; border: 1px solid #D4AF37; border-radius: 20px; background: ${selected === cat ? '#D4AF37' : 'transparent'}; color: ${selected === cat ? '#fff' : '#D4AF37'}; cursor: pointer; white-space: nowrap; transition: 0.3s;">
+      ${validCategories.map(cat => `
+        <button class="category-btn ${selected === cat ? 'active' : ''}" data-category="${escapeHtml(cat)}">
           ${escapeHtml(cat)}
         </button>
       `).join('')}

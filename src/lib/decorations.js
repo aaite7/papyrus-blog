@@ -27,6 +27,20 @@ export function injectDecorations() {
     .nav-btn:hover::after { transform: translateX(-50%) scaleX(1); }
     #dark-mode-toggle { font-size: 1.4rem; }
     
+    /* 搜索区域 */
+    .divider { text-align: center; margin: 40px 0 30px; font-size: 1.5rem; color: #D4AF37; letter-spacing: 10px; opacity: 0.6; }
+    .search-scroll { max-width: 600px; margin: 0 auto 30px; position: relative; }
+    .search-scroll input { width: 100%; padding: 16px 24px; border: 2px solid rgba(212, 175, 55, 0.3); border-radius: 50px; font-family: 'Lora', serif; font-size: 1rem; background: #fff; transition: all 0.3s; text-align: center; }
+    body.dark-mode .search-scroll input { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); color: #e0e0e0; }
+    .search-scroll input:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.2); }
+    .search-scroll input::placeholder { color: #999; font-style: italic; }
+    
+    /* 分类过滤 */
+    .category-filter { display: flex; justify-content: center; gap: 12px; padding: 15px 0; overflow-x: auto; border-bottom: 1px solid rgba(212, 175, 55, 0.2); margin-bottom: 40px; }
+    .category-btn { padding: 10px 20px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 25px; background: transparent; color: var(--sepia); cursor: pointer; white-space: nowrap; transition: all 0.3s; font-family: 'Lora', serif; font-size: 0.95rem; }
+    body.dark-mode .category-btn { color: #ccc; border-color: rgba(212, 175, 55, 0.5); }
+    .category-btn.active, .category-btn:hover { background: #D4AF37; border-color: #D4AF37; color: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3); }
+    
     /* Hero 区域 */
     .hero { position: relative; overflow: hidden; z-index: 1; text-align: center; padding: 80px 20px; background: linear-gradient(135deg, #f4ebe1 0%, #fffef7 100%); border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
     body.dark-mode .hero { background: linear-gradient(135deg, #1a1612 0%, #2a2420 100%); }
