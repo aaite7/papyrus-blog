@@ -756,6 +756,16 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
 }
 
 function renderPostImage(post) {
+  // 调试：输出文章数据
+  if (post.image) {
+    console.log('[PostImage]', post.title, {
+      hasImage: !!post.image,
+      hasCropData: !!post.crop_data,
+      cropData: post.crop_data,
+      imageFit: post.image_fit
+    });
+  }
+  
   if (!post.image) return '';
   
   const containerHeight = 280;
@@ -765,6 +775,19 @@ function renderPostImage(post) {
   // 如果有裁剪数据，使用裁剪区域
   if (post.crop_data) {
     const { x, y, width, height } = post.crop_data;
+    
+    // 验证裁剪数据
+    if (!width || !height || width === 0 || height === 0) {
+      console.warn('[PostImage] Invalid crop_data:', post.crop_data);
+      // 降级到普通显示
+      const objectFit = (post.image_fit || 'contain') === 'cover' ? 'cover' : 'contain';
+      return `
+        <div class="manuscript-image-container" style="width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
+          <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="this.style.display='none'">
+        </div>
+      `;
+    }
+    
     const cropAspect = width / height;
     
     // 计算图片在容器中的显示尺寸（cover 模式）
