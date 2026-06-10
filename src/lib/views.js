@@ -783,27 +783,25 @@ function renderPostImage(post) {
     const cropAspect = width / height;
     
     // 计算缩放比例和显示尺寸
-    let scale, displayWidth, displayHeight, offsetX, offsetY;
+    let scale, displayWidth, displayHeight;
     
     if (cropAspect >= containerAspect) {
       // 裁剪区域更宽或相同比例：宽度填满容器
       scale = containerWidth / width;
       displayWidth = containerWidth;
       displayHeight = height * scale;
-      offsetX = -x * scale;
-      // 垂直居中
-      offsetY = -y * scale + (containerHeight - displayHeight) / 2;
     } else {
       // 裁剪区域更窄：高度填满容器
       scale = containerHeight / height;
       displayHeight = containerHeight;
       displayWidth = width * scale;
-      // 水平居中
-      offsetX = -x * scale + (containerWidth - displayWidth) / 2;
-      offsetY = -y * scale;
     }
     
-    console.log('[PostImage] Calculated:', JSON.stringify({ displayWidth, displayHeight, offsetX, offsetY, scale }));
+    // 居中计算：居中偏移 - 裁剪点偏移
+    const offsetX = (containerWidth - displayWidth) / 2 - x * scale;
+    const offsetY = (containerHeight - displayHeight) / 2 - y * scale;
+    
+    console.log('[PostImage] Final:', JSON.stringify({ displayWidth, displayHeight, offsetX, offsetY, scale }));
     
     return `
       <div class="manuscript-image-container" style="position:relative; width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
