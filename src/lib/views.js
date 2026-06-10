@@ -758,24 +758,47 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
 function renderPostImage(post) {
   if (!post.image) return '';
   
-  const imageFit = post.image_fit || 'contain';
-  const objectFit = imageFit === 'cover' ? 'cover' : 'contain';
+  const containerHeight = 280;
+  const containerAspect = 16 / 9; // 容器宽高比
+  const containerWidth = containerHeight * containerAspect;
   
   // 如果有裁剪数据，使用裁剪区域
   if (post.crop_data) {
     const { x, y, width, height } = post.crop_data;
+    const cropAspect = width / height;
+    
+    // 计算图片在容器中的显示尺寸（cover 模式）
+    let displayWidth, displayHeight, scale;
+    
+    if (cropAspect > containerAspect) {
+      // 裁剪区域更宽，高度填满
+      displayHeight = containerHeight;
+      scale = displayHeight / height;
+      displayWidth = width * scale;
+    } else {
+      // 裁剪区域更窄，宽度填满
+      displayWidth = containerWidth;
+      scale = displayWidth / width;
+      displayHeight = height * scale;
+    }
+    
+    // 计算偏移量
+    const offsetX = -x * scale;
+    const offsetY = -y * scale;
+    
     return `
-      <div class="manuscript-image-container" style="position:relative; width:100%; height:280px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
+      <div class="manuscript-image-container" style="position:relative; width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
         <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" 
-          style="position:absolute; left:${-x}px; top:${-y}px; width:${width}px; height:${height}px; max-width:none; object-fit:cover;" 
+          style="position:absolute; left:${offsetX}px; top:${offsetY}px; width:${displayWidth}px; height:${displayHeight}px; max-width:none; object-fit:cover;" 
           loading="lazy" decoding="async" onerror="this.style.display='none'">
       </div>
     `;
   }
   
   // 无裁剪数据，显示完整图片
+  const objectFit = (post.image_fit || 'contain') === 'cover' ? 'cover' : 'contain';
   return `
-    <div class="manuscript-image-container" style="width:100%; height:280px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
+    <div class="manuscript-image-container" style="width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
       <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="this.style.display='none'">
     </div>
   `;
