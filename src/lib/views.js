@@ -1210,9 +1210,9 @@ export async function renderAdmin(APP, router) {
 }
 
 // --- Editor ---
-export async function renderEditor(APP, id, router) { 
+export async function renderEditor(APP, id, router) {
   try {
-    let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain', icon: '' }; 
+    let post = { title: '', content: '', category: '', tags: [], image: '', image_fit: 'contain', icon: '' };
     if (id) {
       post = await postsService.getPostById(id);
       if (!post) {
@@ -1221,9 +1221,228 @@ export async function renderEditor(APP, id, router) {
       }
     }
     
-    // Editor 渲染逻辑保持不变（篇幅限制，此处省略）
-    // 实际使用时保持原有 renderEditor 的实现
-    APP.innerHTML = '<div class="form-container">Editor loading...</div>';
+    APP.innerHTML = `
+      <div class="form-container">
+        <div class="admin-header">
+          <h2 class="admin-title">${id ? 'Edit' : 'New'} Manuscript</h2>
+          <button class="btn-secondary" data-link="/admin">Cancel</button>
+        </div>
+        <form id="post-form">
+          <div class="icon-input-wrapper">
+            <div class="current-icon-preview" id="icon-preview">${renderIcon(post.icon || '📝')}</div>
+            <div style="flex:1;">
+              <label style="font-size:0.8rem;color:#666;">Page Icon</label>
+              <input id="picon" value="${post.icon || ''}" placeholder="e.g. 🚀 or https://..." style="width:100%;">
+            </div>
+            <button type="button" class="btn-secondary" id="random-icon-btn">🎲</button>
+          </div>
+          
+          <div class="form-group">
+            <label>Title</label>
+            <input id="pt" value="${post.title}" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Cover Image URL</label>
+            <input id="pi" value="${post.image || ''}">
+            <button type="button" class="btn-secondary" id="crop-image-btn" style="margin-top:10px;">✂ Crop Cover</button>
+          </div>
+          
+          <div id="crop-container" class="image-crop-container hidden">
+            <div style="color:#fff;margin-bottom:10px;">Drag to crop</div>
+            <div id="crop-wrapper">
+              <img id="crop-image" src="" style="display:block; max-width:100%;">
+              <div id="crop-box"></div>
+            </div>
+            <div class="crop-controls">
+              <button type="button" class="btn-primary" id="apply-crop-btn">Apply Crop</button>
+              <button type="button" class="btn-secondary" id="cancel-crop-btn">Cancel</button>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Fit</label>
+            <select id="pfit">
+              <option value="contain" ${post.image_fit === 'contain' ? 'selected' : ''}>Contain</option>
+              <option value="cover" ${post.image_fit === 'cover' ? 'selected' : ''}>Cover</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label style="display:flex;justify-content:space-between;">
+              <span>Content</span>
+              <span>Ctrl+I: Img | Tab: Indent</span>
+            </label>
+            <div class="editor-container">
+              <div class="editor-pane" id="editor-pane">
+                <textarea id="pc" class="editor-textarea" required placeholder="Write...">${post.content || ''}</textarea>
+              </div>
+              <div class="preview-pane hidden" id="preview-pane">
+                <div id="preview-content" class="article-content"></div>
+              </div>
+            </div>
+            <button type="button" id="toggle-preview-btn" class="btn-secondary" style="margin-top:5px;width:100%;">Toggle Preview</button>
+          </div>
+          
+          <div class="form-group">
+            <label>Category</label>
+            <input id="pcat" value="${post.category}">
+          </div>
+          
+          <div class="form-group">
+            <label>Tags</label>
+            <input id="ptags" value="${(post.tags || []).join(',')}">
+          </div>
+          
+          <button type="submit" class="btn-primary">Save</button>
+          <button type="button" id="draft-btn" class="btn-secondary">Draft</button>
+        </form>
+      </div>
+    `;
+    
+    // 图标输入事件
+    const iconInput = document.getElementById('picon');
+    const updateIcon = () => {
+      document.getElementById('icon-preview').innerHTML = renderIcon(iconInput.value || '📝');
+    };
+    iconInput.addEventListener('input', updateIcon);
+    
+    // 随机图标按钮
+    document.getElementById('random-icon-btn').addEventListener('click', () => {
+      const icons = ['🚀','💡','🔥','✨','📝','📚','🎨','💻','🪐','🌊'];
+      iconInput.value = icons[Math.floor(Math.random() * icons.length)];
+      updateIcon();
+    });
+    
+    // 裁剪功能
+    let cropData = post.crop_data || null;
+    let isDrawing = false, startX, startY;
+    const els = {
+      btn: document.getElementById('crop-image-btn'),
+      container: document.getElementById('crop-container'),
+      wrapper: document.getElementById('crop-wrapper'),
+      img: document.getElementById('crop-image'),
+      box: document.getElementById('crop-box')
+    };
+    
+    els.btn.addEventListener('click', () => {
+      const url = document.getElementById('pi').value;
+      if (!url) return UI.showToast('Input image URL first!', 'error');
+      els.img.src = url;
+      els.container.classList.remove('hidden');
+      els.box.style.display = 'none';
+    });
+    
+    document.getElementById('cancel-crop-btn').addEventListener('click', () => {
+      els.container.classList.add('hidden');
+    });
+    
+    els.wrapper.onmousedown = e => {
+      e.preventDefault();
+      isDrawing = true;
+      const r = els.img.getBoundingClientRect();
+      startX = e.clientX - r.left;
+      startY = e.clientY - r.top;
+      els.box.style.left = startX + 'px';
+      els.box.style.top = startY + 'px';
+      els.box.style.width = '0px';
+      els.box.style.height = '0px';
+      els.box.style.display = 'block';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+    
+    const onMove = e => {
+      if (!isDrawing) return;
+      const rect = els.img.getBoundingClientRect();
+      let currX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      let currY = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+      els.box.style.width = Math.abs(currX - startX) + 'px';
+      els.box.style.height = Math.abs(currY - startY) + 'px';
+      els.box.style.left = Math.min(currX, startX) + 'px';
+      els.box.style.top = Math.min(currY, startY) + 'px';
+    };
+    
+    const onUp = () => {
+      isDrawing = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    
+    document.getElementById('apply-crop-btn').addEventListener('click', () => {
+      const sX = els.img.naturalWidth / els.img.width;
+      const sY = els.img.naturalHeight / els.img.height;
+      cropData = {
+        width: Math.round(parseFloat(els.box.style.width) * sX),
+        height: Math.round(parseFloat(els.box.style.height) * sY),
+        x: Math.round(parseFloat(els.box.style.left) * sX),
+        y: Math.round(parseFloat(els.box.style.top) * sY)
+      };
+      UI.showToast('Crop Applied!', 'success');
+      els.container.classList.add('hidden');
+    });
+    
+    // 编辑器快捷键
+    const ta = document.getElementById('pc');
+    ta.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.code === 'KeyI') {
+        e.preventDefault();
+        const s = ta.selectionStart;
+        ta.setRangeText(`\n![Img](https://picsum.photos/seed/${Date.now()}/800/450)\n`, s, s, 'end');
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const s = ta.selectionStart, en = ta.selectionEnd;
+        ta.setRangeText('    ', s, en, 'end');
+      }
+    });
+    
+    // 预览切换
+    let mode = false;
+    document.getElementById('toggle-preview-btn').addEventListener('click', () => {
+      mode = !mode;
+      document.getElementById('editor-pane').classList.toggle('split');
+      document.getElementById('preview-pane').classList.toggle('hidden');
+      if (mode) {
+        document.getElementById('preview-content').innerHTML = DOMPurify.sanitize(marked.parse(ta.value, { breaks: true, gfm: true }));
+      }
+    });
+    
+    // 保存功能
+    const save = async (draft) => {
+      const data = {
+        title: document.getElementById('pt').value,
+        content: ta.value,
+        image: document.getElementById('pi').value,
+        image_fit: document.getElementById('pfit').value,
+        category: document.getElementById('pcat').value,
+        tags: document.getElementById('ptags').value.split(',').filter(Boolean),
+        crop_data: cropData,
+        is_draft: draft,
+        icon: iconInput.value
+      };
+      if (id) {
+        await postsService.updatePost(id, data);
+      } else {
+        await postsService.createPost(data);
+      }
+      router.navigate('/admin');
+      UI.showToast(draft ? 'Draft Saved' : 'Published!', 'success');
+    };
+    
+    document.getElementById('post-form').addEventListener('submit', e => {
+      e.preventDefault();
+      save(false);
+    });
+    
+    document.getElementById('draft-btn').addEventListener('click', () => {
+      save(true);
+    });
+    
+    // Cancel 按钮
+    document.querySelectorAll('[data-link]').forEach(btn => {
+      btn.addEventListener('click', () => router.navigate(btn.dataset.link));
+    });
   } catch (err) {
     APP.innerHTML = `<div class="error">Failed to load editor: ${err.message}</div>`;
   }

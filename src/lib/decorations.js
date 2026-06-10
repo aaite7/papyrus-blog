@@ -476,6 +476,42 @@ export function injectDecorations() {
     .btn-secondary:hover { background: rgba(212, 175, 55, 0.1); border-color: #D4AF37; }
     .btn-danger { background: none; border: 1px solid #c9302c; padding: 8px 16px; border-radius: 6px; cursor: pointer; color: #c9302c; transition: all 0.3s; }
     .btn-danger:hover { background: #c9302c; color: #fff; }
+    
+    /* 编辑器样式 */
+    .form-group { margin-bottom: 25px; }
+    .form-group label { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: #8B0000; margin-bottom: 10px; font-weight: bold; }
+    body.dark-mode .form-group label { color: #f0f0f0; }
+    .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"], .form-group select { width: 100%; padding: 14px 18px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; font-family: 'Lora', serif; font-size: 1rem; background: #fff; transition: all 0.3s; }
+    body.dark-mode .form-group input { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+    
+    /* 图标输入 */
+    .icon-input-wrapper { display: flex; align-items: flex-end; gap: 15px; margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.2); }
+    .current-icon-preview { font-size: 2.5rem; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 8px; border: 2px solid rgba(212, 175, 55, 0.3); }
+    body.dark-mode .current-icon-preview { background: #2a2420; }
+    
+    /* 编辑器容器 */
+    .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; min-height: 400px; }
+    .editor-pane { display: flex; flex-direction: column; }
+    .editor-pane.split { grid-column: 1 / -1; }
+    .editor-textarea { width: 100%; flex: 1; min-height: 400px; padding: 20px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; font-family: 'Lora', serif; font-size: 1rem; line-height: 1.8; background: #fff; resize: vertical; transition: all 0.3s; }
+    body.dark-mode .editor-textarea { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
+    .editor-textarea:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+    .preview-pane { background: #fff; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 20px; overflow-y: auto; max-height: 600px; }
+    body.dark-mode .preview-pane { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
+    .preview-pane.hidden { display: none; }
+    .article-content { line-height: 1.8; }
+    .article-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
+    .article-content pre { background: #f4f4f4; padding: 15px; border-radius: 8px; overflow-x: auto; }
+    body.dark-mode .article-content pre { background: #1a1612; }
+    
+    /* 图片裁剪 */
+    .image-crop-container { margin-top: 20px; padding: 20px; background: #1a1612; border-radius: 8px; border: 2px solid rgba(212, 175, 55, 0.3); }
+    .image-crop-container.hidden { display: none; }
+    #crop-wrapper { position: relative; overflow: hidden; cursor: crosshair; }
+    #crop-image { display: block; max-width: 100%; pointer-events: none; }
+    #crop-box { position: absolute; border: 2px dashed #fff; background: rgba(212, 175, 55, 0.3); pointer-events: none; }
+    .crop-controls { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
   `;
   document.head.appendChild(style);
 }
