@@ -244,39 +244,18 @@ function getWeatherIcon(text) {
 
 export function updateClock() {
     let d = document.getElementById('clock-display');
-    if(!d) {
-        d = document.createElement('div');
-        d.id = 'clock-display';
-        d.style.position = 'fixed'; d.style.top = '20px'; d.style.right = '20px'; d.style.textAlign = 'right'; d.style.zIndex = '999'; d.style.fontFamily = "'Lora', serif";
-        document.body.appendChild(d);
-    }
-
-    if (document.body.classList.contains('dark-mode')) {
-        d.style.color = '#e0e0e0'; d.style.textShadow = 'none';
-    } else {
-        d.style.color = '#333'; d.style.textShadow = '0 1px 2px rgba(255,255,255,0.8)';
-    }
+    if (!d) return;
 
     const n = new Date();
-    const timeStr = n.toLocaleTimeString('zh-CN', { hour12: false });
-    const dateStr = n.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-    let lunarStr = '';
-    try {
-        lunarStr = new Intl.DateTimeFormat('zh-CN', { calendar: 'chinese', year: 'numeric', month: 'long', day: 'numeric' }).format(n);
-        lunarStr = lunarStr.replace(/^\d+年/, ''); 
-    } catch(e) {}
-
+    const timeStr = n.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const dateStr = n.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' });
+    
     let weatherHtml = '';
-    let infoText = weatherData.city;
-    if (weatherData.weather) infoText += ` · ${weatherData.weather} ${weatherData.temp}°C`;
-    
-    let flag = '🇨🇳'; 
-    
-    if (weatherData.city) {
-        weatherHtml = `<div style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px; color: #D4AF37; font-weight: bold;">${flag} ${weatherData.icon || ''} ${infoText}</div>`;
+    if (weatherData.city && weatherData.weather) {
+        weatherHtml = `<span style="margin-left: 12px; opacity: 0.8; font-size: 0.85rem;">${weatherData.weather} ${weatherData.temp}°C</span>`;
     }
 
-    d.innerHTML = `<div style="font-size: 1.2rem; font-weight: 600; letter-spacing: 1px;">${timeStr}</div><div style="font-size: 0.8rem; opacity: 0.7;">${dateStr}</div>${weatherHtml}${lunarStr ? `<div style="font-size: 0.75rem; opacity: 0.6; font-family: 'KaiTi', serif;">农历 ${lunarStr}</div>` : ''}`;
+    d.innerHTML = `<span style="font-weight: 500;">${timeStr}</span><span style="margin-left: 12px; opacity: 0.7; font-size: 0.85rem;">${dateStr}</span>${weatherHtml}`;
 }
 
 // >>> 核心修复：改回使用 unpkg 源 <<<

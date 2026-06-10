@@ -195,19 +195,9 @@ function renderHeroSection() {
   return `
     <div class="hero fade-in">
       <div class="hero-content" role="banner">
-        <h1 class="hero-title">
-          <span class="star-icon left" aria-hidden="true">✦</span> 
-          Minimalist 
-          <span class="star-icon right" aria-hidden="true">✦</span>
-        </h1>
+        <h1 class="hero-title">Minimalist</h1>
         <p class="hero-subtitle">Ancient Wisdom, Modern Stories</p>
-        <p class="hero-description">一个受古代卷轴和手写稿启发的极简博客，<br>在喧嚣的数字世界中，为您呈现一片宁静的阅读天地。</p>
-        <div class="hero-features" role="list" aria-label="网站特色">
-          <span class="feature-tag" role="listitem">📖 深度阅读</span>
-          <span class="feature-tag" role="listitem">✍️ 原创内容</span>
-          <span class="feature-tag" role="listitem">🌙 暗黑模式</span>
-          <span class="feature-tag" role="listitem">📱 响应式</span>
-        </div>
+        <p class="hero-description">一个受古代卷轴和手写稿启发的极简博客<br>在喧嚣的数字世界中，为您呈现一片宁静的阅读天地</p>
       </div>
       <div class="hero-decoration" aria-hidden="true">
         <div class="scroll-ornament"></div>

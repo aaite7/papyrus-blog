@@ -14,16 +14,27 @@ export function injectDecorations() {
     @media (max-width: 1200px) { .home-layout { grid-template-columns: 1fr; gap: 40px; } .sidebar { position: static !important; margin-top: 40px; } }
     @media (max-width: 768px) { .home-layout { padding: 0 20px; } }
     
-    /* Hero 区域增强 */
-    .hero { position: relative; overflow: hidden; z-index: 1; text-align: center; padding: 60px 20px; background: linear-gradient(135deg, #f4ebe1 0%, #fffef7 100%); border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
+    /* 导航栏 */
+    nav { position: sticky; top: 0; z-index: 100; background: var(--cream); border-bottom: 3px double var(--gold); box-shadow: 0 4px 12px var(--shadow); backdrop-filter: blur(10px); }
+    .nav-container { max-width: 1600px; margin: 0 auto; padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--burgundy); letter-spacing: 2px; cursor: pointer; position: relative; }
+    .logo::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 100%; height: 2px; background: var(--gold); }
+    .nav-links { display: flex; align-items: center; gap: 24px; }
+    #clock-display { font-family: 'Lora', serif; font-size: 0.95rem; color: var(--sepia); font-weight: 500; }
+    .nav-btn { background: none; border: none; color: var(--sepia); cursor: pointer; font-family: 'Caveat', cursive; font-size: 1.3rem; font-weight: 600; transition: all 0.3s; position: relative; text-decoration: none; }
+    .nav-btn::after { content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%) scaleX(0); width: 100%; height: 2px; background: var(--burgundy); transition: transform 0.3s; }
+    .nav-btn:hover { color: var(--burgundy); }
+    .nav-btn:hover::after { transform: translateX(-50%) scaleX(1); }
+    #dark-mode-toggle { font-size: 1.4rem; }
+    
+    /* Hero 区域 */
+    .hero { position: relative; overflow: hidden; z-index: 1; text-align: center; padding: 80px 20px; background: linear-gradient(135deg, #f4ebe1 0%, #fffef7 100%); border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
     body.dark-mode .hero { background: linear-gradient(135deg, #1a1612 0%, #2a2420 100%); }
-    .hero-title { font-family: 'Playfair Display', serif; font-size: 3.5rem; color: #8B0000; margin-bottom: 20px; animation: fadeInUp 0.8s ease; }
+    .hero-title { font-family: 'Playfair Display', serif; font-size: 4rem; color: #8B0000; margin-bottom: 15px; animation: fadeInUp 0.8s ease; letter-spacing: 3px; }
     body.dark-mode .hero-title { color: #f0f0f0; }
-    .hero-subtitle { font-family: 'Caveat', cursive; font-size: 1.8rem; color: #D4AF37; margin-bottom: 15px; }
-    .hero-description { font-family: 'Lora', serif; font-size: 1.1rem; color: #666; max-width: 600px; margin: 0 auto 25px; line-height: 1.8; }
+    .hero-subtitle { font-family: 'Caveat', cursive; font-size: 1.8rem; color: #D4AF37; margin-bottom: 15px; font-weight: 600; }
+    .hero-description { font-family: 'Lora', serif; font-size: 1.1rem; color: #666; max-width: 650px; margin: 0 auto; line-height: 1.8; }
     body.dark-mode .hero-description { color: #ccc; }
-    .hero-features { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 25px; }
-    .feature-tag { background: rgba(212, 175, 55, 0.1); border: 1px solid rgba(212, 175, 55, 0.3); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; color: #D4AF37; }
     
     /* 焦点文章区 */
     .featured-section { margin: 40px 0; animation: fadeInUp 0.8s ease; }
