@@ -557,11 +557,11 @@ ${y}`}class I extends Error{constructor({message:e,code:t,cause:n,name:i}){var s
         ${r.category?`<span class="footer-meta category-tag">${B(r.category)}</span>`:""}
       </div>
     </article>
-  `}function Ba(r){if(r.image&&console.log("[PostImage]",r.title,{hasImage:!!r.image,hasCropData:!!r.crop_data,cropData:r.crop_data,imageFit:r.image_fit,imageUrl:r.image}),!r.image)return"";const e=280,t=16/9,n=e*t;if(r.crop_data){const{x:s,y:o,width:a,height:l}=r.crop_data;if(console.log("[PostImage] Crop values:",{x:s,y:o,width:a,height:l}),!a||!l||a===0||l===0){console.warn("[PostImage] Invalid crop_data:",r.crop_data);const m=(r.image_fit||"contain")==="cover"?"cover":"contain";return`
+  `}function Ba(r){if(r.image&&console.log("[PostImage]",r.title,{hasImage:!!r.image,hasCropData:!!r.crop_data,cropData:r.crop_data,imageFit:r.image_fit,imageUrl:r.image}),!r.image)return"";const e=280,t=16/9,n=e*t;if(r.crop_data){const{x:s,y:o,width:a,height:l}=r.crop_data;if(console.log("[PostImage] Crop values:",JSON.stringify({x:s,y:o,width:a,height:l})),console.log("[PostImage] Image URL:",r.image),!a||!l||a===0||l===0){console.warn("[PostImage] Invalid crop_data:",r.crop_data);const m=(r.image_fit||"contain")==="cover"?"cover":"contain";return`
         <div class="manuscript-image-container" style="width:100%; height:${e}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${B(r.title)} 封面图">
           <img src="${B(r.image)}" alt="${B(r.title)}" style="width:100%; height:100%; object-fit:${m};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
         </div>
-      `}const c=a/l;let d,h,f;c>t?(h=e,f=h/l,d=a*f):(d=n,f=d/a,h=l*f);const u=-s*f,p=-o*f;return console.log("[PostImage] Calculated:",{displayWidth:d,displayHeight:h,offsetX:u,offsetY:p,scale:f}),`
+      `}const c=a/l;let d,h,f;c>t?(h=e,f=h/l,d=a*f):(d=n,f=d/a,h=l*f);const u=-s*f,p=-o*f;return console.log("[PostImage] Calculated:",JSON.stringify({displayWidth:d,displayHeight:h,offsetX:u,offsetY:p,scale:f})),`
       <div class="manuscript-image-container" style="position:relative; width:100%; height:${e}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${B(r.title)} 封面图">
         <img src="${B(r.image)}" alt="${B(r.title)}" 
           style="position:absolute; left:${u}px; top:${p}px; width:${d}px; height:${h}px; max-width:none; object-fit:cover;" 

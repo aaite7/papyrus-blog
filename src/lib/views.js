@@ -777,7 +777,8 @@ function renderPostImage(post) {
   if (post.crop_data) {
     const { x, y, width, height } = post.crop_data;
     
-    console.log('[PostImage] Crop values:', { x, y, width, height });
+    console.log('[PostImage] Crop values:', JSON.stringify({ x, y, width, height }));
+    console.log('[PostImage] Image URL:', post.image);
     
     // 验证裁剪数据
     if (!width || !height || width === 0 || height === 0) {
@@ -812,7 +813,7 @@ function renderPostImage(post) {
     const offsetX = -x * scale;
     const offsetY = -y * scale;
     
-    console.log('[PostImage] Calculated:', { displayWidth, displayHeight, offsetX, offsetY, scale });
+    console.log('[PostImage] Calculated:', JSON.stringify({ displayWidth, displayHeight, offsetX, offsetY, scale }));
     
     return `
       <div class="manuscript-image-container" style="position:relative; width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
