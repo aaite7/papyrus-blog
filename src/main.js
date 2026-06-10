@@ -138,23 +138,13 @@ async function updateAuthUI() {
   }
 }
 
-function initShortcuts() {
-    document.addEventListener('keydown', (e) => {
-        if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-            if (e.key === 'Escape') document.activeElement.blur();
-            return;
-        }
-        const key = e.key || '';
-        if (key === '/') {
-            e.preventDefault();
-            document.getElementById('search')?.focus();
-        }
-        if (key.toLowerCase() === 'j') window.scrollBy({ top: 300, behavior: 'smooth' });
-        if (key.toLowerCase() === 'k') window.scrollBy({ top: -300, behavior: 'smooth' });
-    });
-}
+let isInitialized = false;
 
 document.addEventListener('DOMContentLoaded', () => {
+  // 防止重复初始化
+  if (isInitialized) return;
+  isInitialized = true;
+  
   Styles.injectGlobalStyles();
   if (UI.loadPrism) UI.loadPrism();
   if (UI.initSelectionSharer) UI.initSelectionSharer();
@@ -193,11 +183,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initKeyboardNavigation();
   };
   setTimeout(initCardNav, 200);
-  if(UI.loadPrism) UI.loadPrism();
-  if(UI.initSelectionSharer) UI.initSelectionSharer();
-  if(UI.initReadingProgress) UI.initReadingProgress();
   
-  // >>> 核心：启动天气查询 <<<
+  // 天气查询
   if(UI.initWeather) UI.initWeather();
 
   const logout = document.getElementById('logout-btn');

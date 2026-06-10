@@ -781,262 +781,32 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
 }
 
 function renderPostImage(post) {
-  // 调试：输出文章数据
-  if (post.image) {
-    console.log('[PostImage]', post.title, {
-      hasImage: !!post.image,
-      hasCropData: !!post.crop_data,
-      cropData: post.crop_data,
-      imageFit: post.image_fit,
-      imageUrl: post.image
-    });
-  }
-  
   if (!post.image) return '';
   
-  const containerHeight = 280;
-  const containerAspect = 16 / 9; // 容器宽高比
-  const containerWidth = containerHeight * containerAspect;
-  
-  // 如果有裁剪数据，使用裁剪区域
   if (post.crop_data) {
     const { x, y, width, height } = post.crop_data;
-    
-    console.log('[PostImage] Crop values:', JSON.stringify({ x, y, width, height }));
-    console.log('[PostImage] Image URL:', post.image);
-    
-    const cropAspect = width / height;
-    
-    // 计算缩放比例和显示尺寸
-    let scale, displayWidth, displayHeight;
-    
-    if (cropAspect >= containerAspect) {
-      // 裁剪区域更宽或相同比例：宽度填满容器
-      scale = containerWidth / width;
-      displayWidth = containerWidth;
-      displayHeight = height * scale;
-    } else {
-      // 裁剪区域更窄：高度填满容器
-      scale = containerHeight / height;
-      displayHeight = containerHeight;
-      displayWidth = width * scale;
-    }
-    
-    // 居中计算：居中偏移 - 裁剪点偏移
-    const offsetX = (containerWidth - displayWidth) / 2 - x * scale;
-    const offsetY = (containerHeight - displayHeight) / 2 - y * scale;
-    
-    console.log('[PostImage] Final:', JSON.stringify({ displayWidth, displayHeight, offsetX, offsetY, scale }));
-    
     return `
-      <div class="manuscript-image-container" style="position:relative; width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-        <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" 
-          style="position:absolute; left:50%; top:50%; width:${displayWidth}px; height:${displayHeight}px; max-width:none; transform:translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px));" 
-          loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
+      <div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;">
+        <img src="${post.image}" style="position:absolute; max-width:none;"
+           onload="
+             const cW=this.parentElement.offsetWidth;
+             const cH=this.parentElement.offsetHeight;
+             const scale=Math.max(cW/${width},cH/${height});
+             this.width=this.naturalWidth*scale;
+             this.height=this.naturalHeight*scale;
+             this.style.left=((-${x}*scale)+(cW-${width}*scale)/2)+'px';
+             this.style.top=((-${y}*scale)+(cH-${height}*scale)/2)+'px';
+           ">
       </div>
     `;
   }
   
-  // 无裁剪数据，显示完整图片
-  const objectFit = (post.image_fit || 'contain') === 'cover' ? 'cover' : 'contain';
   return `
-    <div class="manuscript-image-container" style="width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-      <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
+    <div class="single-image-container">
+      <img src="${post.image}" class="single-image" style="object-fit:${post.image_fit || 'contain'};">
     </div>
   `;
 }
-
-// --- Post ---
-export async function renderPost(APP, id, router, updateMetaCallback) {
-  try {
-    const post = await postsService.getPostById(id);
-    if (!post) { 
-      APP.innerHTML = '<div class="error">Lost scroll...</div>'; 
-      return; 
-    }
-
-    // 使用真实阅读量
-    const realViewCount = await getPostViewCount(id);
-    post.view_count = realViewCount || post.view_count || 0;
-
-    await updatePostView(id, post);
-
-    if (updateMetaCallback) updateMetaCallback(post);
-    
-    // 追踪页面浏览
-    trackPageView(id, post.title);
-    
-    const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
-    const comments = await commentsService.getCommentsByPostId(id);
-    const likes = post.likes || 0;
-    const isLiked = localStorage.getItem(`liked_${id}`);
-
-    APP.innerHTML = `
-      <div id="reading-progress"></div>
-      <div id="toc"></div>
-
-      <div class="floating-bar">
-        <div class="action-btn ${isLiked ? 'liked' : ''}" id="btn-like">
-          ♥ <span class="btn-badge" id="l-cnt">${likes}</span>
-        </div>
-        <div class="action-btn" id="btn-print" title="打印文章">🖨️</div>
-        <div class="action-btn" id="btn-share">🔗</div>
-        <div class="action-btn" id="btn-top">⬆</div>
-      </div>
-
-      <div class="single-manuscript fade-in">
-        <div class="manuscript-header">
-          ${post.icon ? renderIcon(post.icon, 'single-icon') : ''}
-          <h1 class="single-title">${post.title}</h1>
-          <div class="single-meta">
-            Scribed on ${new Date(post.created_at).toLocaleDateString('zh-CN')} • 👁 ${post.view_count || 0} • ⏱ ${readingTime(post.content)} min read
-          </div>
-        </div>
-        
-        ${renderSinglePostImage(post)}
-        <article class="article-content">${injectHeadingIds(content)}</article>
-        
-        <!-- 上一篇/下一篇导航 -->
-        <div class="post-navigation">
-          <div id="prev-post" class="nav-item nav-prev"></div>
-          <div id="next-post" class="nav-item nav-next"></div>
-        </div>
-        
-        <div id="related-posts" style="margin-top: 40px; padding-top: 30px; border-top: 1px solid #eee;">
-          <h3 style="margin-bottom: 20px; font-family: 'Playfair Display', serif;">相关文章</h3>
-          <div id="related-posts-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
-            <div style="opacity: 0.5;">加载中...</div>
-          </div>
-        </div>
-      </div>
-
-      <div id="comments-section">
-        <div class="divider">✦ Comments (${comments.length}) ✦</div>
-        <div id="comments-list">
-          ${commentsService.renderComments(comments)}
-        </div>
-        <div class="form-container" style="margin-top:20px;">
-          <form id="comment-form">
-            <input type="hidden" id="parent-id" value="">
-            <input id="cn" placeholder="Name" required>
-            <input id="ce" placeholder="Email" required>
-            <textarea id="cc" placeholder="Comment..." required></textarea>
-            <button type="submit" class="btn-primary">Post</button>
-          </form>
-          <div id="reply-preview" style="display: none; margin-top: 10px; padding: 10px; background: #fffdf5; border-left: 3px solid #D4AF37;">
-            <span style="font-size: 0.85rem; color: #666;">正在回复:</span>
-            <span id="reply-to-name" style="font-weight: bold; margin-left: 5px;"></span>
-            <button id="cancel-reply" style="float: right; background: none; border: none; color: #999; cursor: pointer;">×</button>
-          </div>
-        </div>
-      </div>
-      ${renderFooter()}
-    `;
-
-    UI.initLightbox();
-    UI.initReadingProgress();
-    UI.initLazyLoad();
-    
-    // 初始化阅读进度追踪（带进度条）
-    const ReadingTracker = await import('./reading-progress.js');
-    ReadingTracker.initReadingTracker(id);
-
-    updatePageMeta(post);
-    addStructuredData(post);
-
-    if (generateTOC(post.content).length > 0) { 
-      initTOC(post.content);
-    }
-
-    initPostActions(id, likes);
-    initCommentForm(id, router);
-    initReplyButtons(id, router);
-    loadRelatedPosts(id, post.tags);
-    initCardHoverPreload();
-    loadPostNavigation(id);
-  } catch (err) {
-    APP.innerHTML = `<div class="error">Failed to load post: ${err.message}</div>`;
-    console.error(err);
-  }
-}
-
-/**
- * 加载上一篇/下一篇文章导航
- */
-async function loadPostNavigation(currentPostId) {
-  try {
-    const allPosts = await postsService.getAllPosts();
-    const sortedPosts = allPosts.sort((a, b) => 
-      new Date(b.created_at) - new Date(a.created_at)
-    );
-    
-    const currentIndex = sortedPosts.findIndex(p => p.id === currentPostId);
-    
-    if (currentIndex === -1) return;
-    
-    const prevPost = currentIndex > 0 ? sortedPosts[currentIndex - 1] : null;
-    const nextPost = currentIndex < sortedPosts.length - 1 ? sortedPosts[currentIndex + 1] : null;
-    
-    const prevEl = document.getElementById('prev-post');
-    const nextEl = document.getElementById('next-post');
-    
-    if (prevEl) {
-      prevEl.innerHTML = prevPost 
-        ? `<span class="nav-label">← 上一篇</span><h4 class="nav-title">${escapeHtml(prevPost.title)}</h4>`
-        : `<span class="nav-label">← 上一篇</span><div class="nav-empty">没有更早的文章</div>`;
-      
-      if (prevPost) {
-        prevEl.style.cursor = 'pointer';
-        prevEl.addEventListener('click', () => router.navigate(`/post/${prevPost.id}`));
-      }
-    }
-    
-    if (nextEl) {
-      nextEl.innerHTML = nextPost
-        ? `<span class="nav-label">下一篇 →</span><h4 class="nav-title">${escapeHtml(nextPost.title)}</h4>`
-        : `<span class="nav-label">下一篇 →</span><div class="nav-empty">没有更新的文章</div>`;
-      
-      if (nextPost) {
-        nextEl.style.cursor = 'pointer';
-        nextEl.addEventListener('click', () => router.navigate(`/post/${nextPost.id}`));
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load post navigation:', err);
-  }
-}
-
-async function updatePostView(postId, post) {
-  if (!sessionStorage.getItem(`view_${postId}`)) {
-    try {
-      await postsService.updatePost(postId, { view_count: (post.view_count || 0) + 1 });
-      sessionStorage.setItem(`view_${postId}`, '1');
-    } catch (err) {
-      console.error('Failed to update view count:', err);
-    }
-  }
-}
-
-function renderSinglePostImage(post) {
-  if (!post.image) return '';
-  
-  if (post.crop_data) {
-    const { width, height, x, y } = post.crop_data;
-    return `
-      <div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;">
-        <img src="${post.image}" style="position:absolute; max-width:none;" 
-             onload="
-               const cW=this.parentElement.offsetWidth;
-               const cH=this.parentElement.offsetHeight;
-               const scale=Math.max(cW/${width},cH/${height});
-               this.width=this.naturalWidth*scale;
-               this.height=this.naturalHeight*scale;
-               this.style.left=((-${x}*scale)+(cW-${width}*scale)/2)+'px';
-               this.style.top=((-${y}*scale)+(cH-${height}*scale)/2)+'px';
-             ">
-      </div>
-    `;
-  }
   
   return `
     <div class="single-image-container">
