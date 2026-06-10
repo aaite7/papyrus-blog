@@ -79,15 +79,51 @@ async function updateAuthUI() {
   const logoutBtn = document.getElementById('logout-btn');
   const toggleBtn = document.getElementById('dark-mode-toggle');
 
-  const { data: { session } } = await supabase.auth.getSession();
-  state.isAdmin = !!session;
+  // 显示加载状态
+  if (adminLink) {
+    adminLink.classList.add('loading');
+    const authLoading = adminLink.querySelector('.auth-loading');
+    const adminText = adminLink.querySelector('.admin-text');
+    if (authLoading) authLoading.classList.add('show');
+    if (adminText) adminText.style.opacity = '0.5';
+  }
 
-  if (state.isAdmin) {
-    adminLink.textContent = 'Scriptorium';
-    logoutBtn.classList.remove('hidden');
-  } else {
-    adminLink.textContent = 'Scribe';
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    state.isAdmin = !!session;
+
+    if (state.isAdmin) {
+      if (adminLink.querySelector('.admin-text')) {
+        adminLink.querySelector('.admin-text').textContent = 'Scriptorium';
+      } else {
+        adminLink.textContent = 'Scriptorium';
+      }
+      logoutBtn.classList.remove('hidden');
+    } else {
+      if (adminLink.querySelector('.admin-text')) {
+        adminLink.querySelector('.admin-text').textContent = 'Scribe';
+      } else {
+        adminLink.textContent = 'Scribe';
+      }
+      logoutBtn.classList.add('hidden');
+    }
+  } catch (err) {
+    console.error('Auth check failed:', err);
+    if (adminLink.querySelector('.admin-text')) {
+      adminLink.querySelector('.admin-text').textContent = 'Scribe';
+    } else {
+      adminLink.textContent = 'Scribe';
+    }
     logoutBtn.classList.add('hidden');
+  } finally {
+    // 隐藏加载状态
+    if (adminLink) {
+      adminLink.classList.remove('loading');
+      const authLoading = adminLink.querySelector('.auth-loading');
+      const adminText = adminLink.querySelector('.admin-text');
+      if (authLoading) authLoading.classList.remove('show');
+      if (adminText) adminText.style.opacity = '1';
+    }
   }
 
   if (window.clockInterval) clearInterval(window.clockInterval);

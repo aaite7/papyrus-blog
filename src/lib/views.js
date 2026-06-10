@@ -194,14 +194,36 @@ export async function renderHome(APP, state) {
 function renderHeroSection() {
   return `
     <div class="hero fade-in">
+      <div class="hero-bg-decoration">
+        <div class="hero-gradient-orb orb-1"></div>
+        <div class="hero-gradient-orb orb-2"></div>
+        <div class="hero-gradient-orb orb-3"></div>
+      </div>
       <div class="hero-content" role="banner">
-        <h1 class="hero-title">Minimalist</h1>
-        <p class="hero-subtitle">Ancient Wisdom, Modern Stories</p>
-        <p class="hero-description">一个受古代卷轴和手写稿启发的极简博客<br>在喧嚣的数字世界中，为您呈现一片宁静的阅读天地</p>
+        <div class="hero-badge fade-in-up">古风极简博客</div>
+        <h1 class="hero-title fade-in-up" style="animation-delay: 0.1s">Minimalist</h1>
+        <p class="hero-subtitle fade-in-up" style="animation-delay: 0.2s">Ancient Wisdom, Modern Stories</p>
+        <p class="hero-description fade-in-up" style="animation-delay: 0.3s">一个受古代卷轴和手写稿启发的极简博客<br>在喧嚣的数字世界中，为您呈现一片宁静的阅读天地</p>
+        <div class="hero-cta fade-in-up" style="animation-delay: 0.4s">
+          <button class="btn-hero-primary" onclick="document.querySelector('.manuscripts')?.scrollIntoView({behavior:'smooth'})">
+            开始阅读
+            <span class="btn-hero-arrow">↓</span>
+          </button>
+          <button class="btn-hero-secondary" data-link="/archive">
+            浏览归档
+          </button>
+        </div>
       </div>
       <div class="hero-decoration" aria-hidden="true">
         <div class="scroll-ornament"></div>
         <div class="ink-splash"></div>
+        <div class="floating-particles">
+          <span class="particle">✦</span>
+          <span class="particle">✧</span>
+          <span class="particle">✦</span>
+          <span class="particle">✧</span>
+          <span class="particle">✦</span>
+        </div>
       </div>
     </div>
   `;
@@ -717,7 +739,7 @@ function initPagination(state, renderList) {
 }
 
 function renderManuscriptCard(post, searchQuery = '', index = 0) {
-  const pinStyle = post.is_pinned ? 'border-color:#D4AF37;background:#fffdf5;' : '';
+  const pinStyle = post.is_pinned ? 'border-color:#D4AF37;background:linear-gradient(135deg,#fffdf5 0%,#f4ebe1 100%);' : '';
   const pinBadge = post.is_pinned ? '<span class="pinned-badge">📌 Top</span>' : '';
   const icon = post.icon ? renderIcon(post.icon, 'list-icon') : '';
   
@@ -728,23 +750,31 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
   const highlightedExcerpt = highlightText(excerpt, searchQuery);
   
   return `
-    <article class="manuscript ${index === 0 ? 'featured-card' : ''} fade-in" 
+    <article class="manuscript fade-in" 
           role="article"
           data-post-id="${post.id}" 
-          style="${pinStyle} animation-delay: ${index * 0.1}s"
+          style="${pinStyle} animation-delay: ${index * 0.08}s"
           aria-labelledby="post-title-${post.id}"> 
-      <div class="manuscript-header">
-        ${pinBadge}
-        ${icon}
-        <h2 class="manuscript-title" id="post-title-${post.id}">${highlightedTitle}</h2>
-        <div class="manuscript-date">${new Date(post.created_at).toLocaleDateString('zh-CN')}</div>
-      </div>
-      ${imageHTML}
-      <p class="manuscript-excerpt">${highlightedExcerpt}</p>
-      <div class="manuscript-footer">
-        <span class="footer-meta"><span class="meta-icon" aria-hidden="true">👁</span> ${post.view_count || 0}</span>
-        <span class="footer-meta"><span class="meta-icon" aria-hidden="true">⏱</span> ${readingTime(post.content)} min</span>
-        ${post.category ? `<span class="footer-meta category-tag">${escapeHtml(post.category)}</span>` : ''}
+      <div class="manuscript-inner">
+        <div class="manuscript-content">
+          ${imageHTML}
+          <div class="manuscript-body">
+            <div class="manuscript-header">
+              ${icon}
+              ${pinBadge}
+            </div>
+            <h2 class="manuscript-title" id="post-title-${post.id}">${highlightedTitle}</h2>
+            <p class="manuscript-excerpt">${highlightedExcerpt}</p>
+            <div class="manuscript-date">${new Date(post.created_at).toLocaleDateString('zh-CN')}</div>
+          </div>
+        </div>
+        <div class="manuscript-footer">
+          <div class="footer-left">
+            <span class="footer-meta hover-scale"><span class="meta-icon">👁</span> <span class="meta-value">${post.view_count || 0}</span></span>
+            <span class="footer-meta hover-scale"><span class="meta-icon">⏱</span> <span class="meta-value">${readingTime(post.content)} min</span></span>
+          </div>
+          ${post.category ? `<span class="footer-category">${escapeHtml(post.category)}</span>` : ''}
+        </div>
       </div>
     </article>
   `;
@@ -1135,11 +1165,14 @@ function initCardHoverPreload() {
 export function renderLogin(APP, router) { 
   APP.innerHTML = `
     <div class="form-container fade-in">
-      <h2 class="form-title">Login</h2>
+      <h2 class="Form-title">Login</h2>
       <form id="login-form">
         <input type="email" id="le" placeholder="Email" required>
         <input type="password" id="lp" placeholder="Password" required>
-        <button type="submit" class="btn-primary" style="width:100%;margin-top:20px;">Sign In</button>
+        <button type="submit" class="btn-primary" id="login-btn" style="width:100%;margin-top:20px;position:relative;overflow:hidden;">
+          <span class="btn-text">Sign In</span>
+          <div class="login-progress" style="position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#D4AF37,#F4C430,#D4AF37);width:0%;transition:width 0.3s ease;"></div>
+        </button>
       </form>
     </div>
     ${renderFooter()}
@@ -1149,13 +1182,33 @@ export function renderLogin(APP, router) {
     e.preventDefault(); 
     const email = document.getElementById('le').value;
     const password = document.getElementById('lp').value;
+    const loginBtn = document.getElementById('login-btn');
+    const progress = loginBtn.querySelector('.login-progress');
+    const btnText = loginBtn.querySelector('.btn-text');
+    
+    loginBtn.disabled = true;
+    btnText.style.opacity = '0.7';
+    progress.style.width = '30%';
+    
+    setTimeout(() => { progress.style.width = '60%'; }, 200);
     
     try { 
+      setTimeout(() => { progress.style.width = '100%'; }, 400);
+      
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      
+      progress.style.transition = 'width 0.3s ease, opacity 0.3s ease';
+      progress.style.opacity = '0';
+      
       UI.showToast('Welcome back.', 'success');
       router.navigate('/admin'); 
     } catch (err) { 
+      progress.style.transition = 'width 0.3s ease, opacity 0.3s ease';
+      progress.style.opacity = '0';
+      progress.style.width = '0%';
+      loginBtn.disabled = false;
+      btnText.style.opacity = '1';
       UI.showToast('Login failed: ' + err.message, 'error'); 
     } 
   }); 
