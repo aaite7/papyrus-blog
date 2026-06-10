@@ -332,7 +332,7 @@ export function injectDecorations() {
     .scroll-top-btn svg { width: 24px; height: 24px; stroke-width: 2.5; }
     
     /* 阅读进度条 - 增强版 */
-    .reading-progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, #D4AF37 0%, #F4C430 50%, #D4AF37 100%); z-index: 10001; transition: width 0.1s ease; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+    .reading-progress-bar { position: fixed; top: 0; left: 0; height: 2px; background: linear-gradient(90deg, #D4AF37 0%, #F4C430 50%, #D4AF37 100%); z-index: 10001; transition: width 0.1s ease; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
     .reading-progress-bar::after { content: ''; position: absolute; top: 0; right: 0; width: 30px; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4)); animation: shimmer 2s infinite; }
     @keyframes shimmer { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     
