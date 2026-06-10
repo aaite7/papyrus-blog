@@ -780,38 +780,28 @@ function renderPostImage(post) {
     console.log('[PostImage] Crop values:', JSON.stringify({ x, y, width, height }));
     console.log('[PostImage] Image URL:', post.image);
     
-    // 验证裁剪数据
-    if (!width || !height || width === 0 || height === 0) {
-      console.warn('[PostImage] Invalid crop_data:', post.crop_data);
-      // 降级到普通显示
-      const objectFit = (post.image_fit || 'contain') === 'cover' ? 'cover' : 'contain';
-      return `
-        <div class="manuscript-image-container" style="width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-          <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
-        </div>
-      `;
-    }
-    
     const cropAspect = width / height;
     
-    // 计算图片在容器中的显示尺寸（cover 模式）
-    let displayWidth, displayHeight, scale;
+    // 计算缩放比例和显示尺寸
+    let scale, displayWidth, displayHeight, offsetX, offsetY;
     
-    if (cropAspect > containerAspect) {
-      // 裁剪区域更宽，高度填满
-      displayHeight = containerHeight;
-      scale = displayHeight / height;
-      displayWidth = width * scale;
-    } else {
-      // 裁剪区域更窄，宽度填满
+    if (cropAspect >= containerAspect) {
+      // 裁剪区域更宽或相同比例：宽度填满容器
+      scale = containerWidth / width;
       displayWidth = containerWidth;
-      scale = displayWidth / width;
       displayHeight = height * scale;
+      offsetX = -x * scale;
+      // 垂直居中
+      offsetY = -y * scale + (containerHeight - displayHeight) / 2;
+    } else {
+      // 裁剪区域更窄：高度填满容器
+      scale = containerHeight / height;
+      displayHeight = containerHeight;
+      displayWidth = width * scale;
+      // 水平居中
+      offsetX = -x * scale + (containerWidth - displayWidth) / 2;
+      offsetY = -y * scale;
     }
-    
-    // 计算偏移量
-    const offsetX = -x * scale;
-    const offsetY = -y * scale;
     
     console.log('[PostImage] Calculated:', JSON.stringify({ displayWidth, displayHeight, offsetX, offsetY, scale }));
     
