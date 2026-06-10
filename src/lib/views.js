@@ -762,7 +762,8 @@ function renderPostImage(post) {
       hasImage: !!post.image,
       hasCropData: !!post.crop_data,
       cropData: post.crop_data,
-      imageFit: post.image_fit
+      imageFit: post.image_fit,
+      imageUrl: post.image
     });
   }
   
@@ -776,6 +777,8 @@ function renderPostImage(post) {
   if (post.crop_data) {
     const { x, y, width, height } = post.crop_data;
     
+    console.log('[PostImage] Crop values:', { x, y, width, height });
+    
     // 验证裁剪数据
     if (!width || !height || width === 0 || height === 0) {
       console.warn('[PostImage] Invalid crop_data:', post.crop_data);
@@ -783,7 +786,7 @@ function renderPostImage(post) {
       const objectFit = (post.image_fit || 'contain') === 'cover' ? 'cover' : 'contain';
       return `
         <div class="manuscript-image-container" style="width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-          <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
         </div>
       `;
     }
@@ -809,11 +812,15 @@ function renderPostImage(post) {
     const offsetX = -x * scale;
     const offsetY = -y * scale;
     
+    console.log('[PostImage] Calculated:', { displayWidth, displayHeight, offsetX, offsetY, scale });
+    
     return `
       <div class="manuscript-image-container" style="position:relative; width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
         <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" 
           style="position:absolute; left:${offsetX}px; top:${offsetY}px; width:${displayWidth}px; height:${displayHeight}px; max-width:none; object-fit:cover;" 
-          loading="lazy" decoding="async" onerror="this.style.display='none'">
+          loading="lazy" decoding="async" 
+          onerror="console.error('[Image Error]', this.src); this.style.display='none'"
+        >
       </div>
     `;
   }
@@ -822,7 +829,7 @@ function renderPostImage(post) {
   const objectFit = (post.image_fit || 'contain') === 'cover' ? 'cover' : 'contain';
   return `
     <div class="manuscript-image-container" style="width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-      <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="this.style.display='none'">
+      <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
     </div>
   `;
 }

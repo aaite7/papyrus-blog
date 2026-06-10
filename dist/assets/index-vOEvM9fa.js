@@ -557,19 +557,21 @@ ${y}`}class I extends Error{constructor({message:e,code:t,cause:n,name:i}){var s
         ${r.category?`<span class="footer-meta category-tag">${B(r.category)}</span>`:""}
       </div>
     </article>
-  `}function Ba(r){if(r.image&&console.log("[PostImage]",r.title,{hasImage:!!r.image,hasCropData:!!r.crop_data,cropData:r.crop_data,imageFit:r.image_fit}),!r.image)return"";const e=280,t=16/9,n=e*t;if(r.crop_data){const{x:s,y:o,width:a,height:l}=r.crop_data;if(!a||!l||a===0||l===0){console.warn("[PostImage] Invalid crop_data:",r.crop_data);const m=(r.image_fit||"contain")==="cover"?"cover":"contain";return`
+  `}function Ba(r){if(r.image&&console.log("[PostImage]",r.title,{hasImage:!!r.image,hasCropData:!!r.crop_data,cropData:r.crop_data,imageFit:r.image_fit,imageUrl:r.image}),!r.image)return"";const e=280,t=16/9,n=e*t;if(r.crop_data){const{x:s,y:o,width:a,height:l}=r.crop_data;if(console.log("[PostImage] Crop values:",{x:s,y:o,width:a,height:l}),!a||!l||a===0||l===0){console.warn("[PostImage] Invalid crop_data:",r.crop_data);const m=(r.image_fit||"contain")==="cover"?"cover":"contain";return`
         <div class="manuscript-image-container" style="width:100%; height:${e}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${B(r.title)} 封面图">
-          <img src="${B(r.image)}" alt="${B(r.title)}" style="width:100%; height:100%; object-fit:${m};" loading="lazy" decoding="async" onerror="this.style.display='none'">
+          <img src="${B(r.image)}" alt="${B(r.title)}" style="width:100%; height:100%; object-fit:${m};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
         </div>
-      `}const c=a/l;let d,h,f;c>t?(h=e,f=h/l,d=a*f):(d=n,f=d/a,h=l*f);const u=-s*f,p=-o*f;return`
+      `}const c=a/l;let d,h,f;c>t?(h=e,f=h/l,d=a*f):(d=n,f=d/a,h=l*f);const u=-s*f,p=-o*f;return console.log("[PostImage] Calculated:",{displayWidth:d,displayHeight:h,offsetX:u,offsetY:p,scale:f}),`
       <div class="manuscript-image-container" style="position:relative; width:100%; height:${e}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${B(r.title)} 封面图">
         <img src="${B(r.image)}" alt="${B(r.title)}" 
           style="position:absolute; left:${u}px; top:${p}px; width:${d}px; height:${h}px; max-width:none; object-fit:cover;" 
-          loading="lazy" decoding="async" onerror="this.style.display='none'">
+          loading="lazy" decoding="async" 
+          onerror="console.error('[Image Error]', this.src); this.style.display='none'"
+        >
       </div>
     `}const i=(r.image_fit||"contain")==="cover"?"cover":"contain";return`
     <div class="manuscript-image-container" style="width:100%; height:${e}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${B(r.title)} 封面图">
-      <img src="${B(r.image)}" alt="${B(r.title)}" style="width:100%; height:100%; object-fit:${i};" loading="lazy" decoding="async" onerror="this.style.display='none'">
+      <img src="${B(r.image)}" alt="${B(r.title)}" style="width:100%; height:100%; object-fit:${i};" loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
     </div>
   `}async function Na(r,e,t,n){try{const i=await M.getPostById(e);if(!i){r.innerHTML='<div class="error">Lost scroll...</div>';return}const s=await oi(e);i.view_count=s||i.view_count||0,await Ua(e,i),n&&n(i),Ut(e,i.title);const o=DOMPurify.sanitize(marked.parse(i.content||"",{breaks:!0,gfm:!0})),a=await Bt.getCommentsByPostId(e),l=i.likes||0,c=localStorage.getItem(`liked_${e}`);r.innerHTML=`
       <div id="reading-progress"></div>
