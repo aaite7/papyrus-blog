@@ -758,47 +758,13 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
 function renderPostImage(post) {
   if (!post.image) return '';
   
-  // 使用优化后的图片
-  const optimizedHtml = createResponsiveImage(post, {
-    width: 800,
-    height: 600,
-    loading: 'lazy',
-    decoding: 'async'
-  });
+  const imageFit = post.image_fit || 'contain';
+  const objectFit = imageFit === 'cover' ? 'cover' : 'contain';
   
-  if (post.crop_data) {
-    const { width, height, x, y } = post.crop_data;
-    return `
-      <div class="manuscript-image-container" style="position:relative; width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-        ${optimizedHtml.replace('height:100%', `position:absolute; max-width:none; transition: opacity 0.3s; opacity:0;`)}
-        <script>
-          (function() {
-            const img = this.parentElement.querySelector('img');
-            img.onload = function() {
-              this.style.opacity = 1;
-              const container = this.parentElement;
-              const cW = container.offsetWidth;
-              const cH = container.offsetHeight;
-              const scale = Math.max(cW / ${width}, cH / ${height});
-              this.width = this.naturalWidth * scale;
-              this.height = this.naturalHeight * scale;
-              const left = (-${x} * scale) + (cW - ${width} * scale) / 2;
-              const top = (-${y} * scale) + (cH - ${height} * scale) / 2;
-              this.style.left = left + 'px';
-              this.style.top = top + 'px';
-            };
-          }).call(this);
-        <\/script>
-      </div>
-    `;
-  }
-  
+  // 简单直接的图片渲染
   return `
     <div class="manuscript-image-container" style="width:100%; height:300px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
-      <picture>
-        <source srcset="${escapeHtml(post.image)}?format=webp" type="image/webp">
-        <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:cover;" loading="lazy" decoding="async">
-      </picture>
+      <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" style="width:100%; height:100%; object-fit:${objectFit};" loading="lazy" decoding="async" onerror="this.style.display='none'">
     </div>
   `;
 }
