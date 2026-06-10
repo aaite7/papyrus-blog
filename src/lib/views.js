@@ -806,10 +806,8 @@ function renderPostImage(post) {
     return `
       <div class="manuscript-image-container" style="position:relative; width:100%; height:${containerHeight}px; overflow:hidden; border-radius:4px; margin:15px 0;" role="img" aria-label="${escapeHtml(post.title)} 封面图">
         <img src="${escapeHtml(post.image)}" alt="${escapeHtml(post.title)}" 
-          style="position:absolute; left:${offsetX}px; top:${offsetY}px; width:${displayWidth}px; height:${displayHeight}px; max-width:none; object-fit:cover;" 
-          loading="lazy" decoding="async" 
-          onerror="console.error('[Image Error]', this.src); this.style.display='none'"
-        >
+          style="position:absolute; left:50%; top:50%; width:${displayWidth}px; height:${displayHeight}px; max-width:none; transform:translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px));" 
+          loading="lazy" decoding="async" onerror="console.error('[Image Error]', this.src); this.style.display='none'">
       </div>
     `;
   }
