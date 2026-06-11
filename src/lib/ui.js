@@ -195,14 +195,26 @@ function loadAMapScript() {
         script.type = 'text/javascript';
         script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}&plugin=AMap.CitySearch,AMap.Weather`;
         script.onload = () => resolve(window.AMap);
-        script.onerror = (e) => reject(e);
+        script.onerror = (e) => {
+            // 广告拦截器可能阻止了高德地图，静默失败
+            resolve(null);
+        };
         document.head.appendChild(script);
     });
 }
 
 export async function initWeather() {
     try {
-        await loadAMapScript();
+        const AMap = await loadAMapScript();
+        if (!AMap) {
+            // 高德地图加载失败，使用默认值
+            weatherData.city = '南昌';
+            weatherData.weather = '晴';
+            weatherData.temp = '25';
+            weatherData.icon = '☀️';
+            updateClock();
+            return;
+        }
         const weather = new window.AMap.Weather();
         
         // 直接获取南昌天气，不再定位
