@@ -340,6 +340,13 @@ export function injectDecorations() {
     .read-badge { display: inline-block; background: rgba(7, 193, 96, 0.2); color: #07c160; padding: 6px 14px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; margin-left: 15px; border: 1px solid rgba(7, 193, 96, 0.3); }
     body.dark-mode .read-badge { background: rgba(7, 193, 96, 0.3); }
     
+    /* 站点页脚 */
+    .site-footer { text-align: center; padding: 40px 20px; margin-top: 60px; border-top: 1px solid rgba(212, 175, 55, 0.2); background: linear-gradient(180deg, rgba(212,175,55,0.05) 0%, transparent 100%); }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--burgundy); letter-spacing: 2px; display: block; margin-bottom: 10px; }
+    body.dark-mode .footer-logo { color: #f0f0f0; }
+    .footer-copy { color: #999; font-size: 0.9rem; }
+    body.dark-mode .footer-copy { color: #777; }
+    
     /* 搜索历史 */
     .search-history-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); z-index: 1000; margin-top: 8px; overflow: hidden; }
     body.dark-mode .search-history-dropdown { background: #1e1e1e; }
