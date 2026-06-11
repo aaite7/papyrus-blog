@@ -997,6 +997,17 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
   }
 }
 
+async function updatePostView(postId, post) {
+  if (!sessionStorage.getItem(`view_${postId}`)) {
+    try {
+      await postsService.updatePost(postId, { view_count: (post.view_count || 0) + 1 });
+      sessionStorage.setItem(`view_${postId}`, '1');
+    } catch (err) {
+      console.error('Failed to update view count:', err);
+    }
+  }
+}
+
 async function loadPostNavigation(currentPostId) {
   try {
     const allPosts = await postsService.getAllPosts();
