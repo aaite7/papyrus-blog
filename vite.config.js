@@ -29,5 +29,5 @@ export default defineConfig({
       'X-Content-Type-Options': 'nosniff',
     },
   },
-  assetsInclude: ['**/*.webp'],
+  assetsInclude: ['**/*.webp', '**/*.avif'],
 });

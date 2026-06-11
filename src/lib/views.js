@@ -10,7 +10,7 @@ import { updatePageMeta, addStructuredData, addWebSiteStructuredData } from './s
 import { saveSearchHistory, showSearchHistory, hideSearchHistory } from './search-history.js';
 import { makeCardsFocusable, initKeyboardNavigation } from './keyboard-nav.js';
 import { initReadingTracker } from './reading-progress.js';
-import { optimizeExistingImages, createResponsiveImage } from './image-optimizer.js';
+import { optimizeExistingImages, createResponsiveImage, supportsWebP } from './image-optimizer.js';
 import { withErrorHandling, initGlobalErrorHandler } from './error-boundary.js';
 import { initAnalytics, trackPageView, trackEvent, getPostViewCount } from './analytics.js';
 import { initVirtualScroll, refreshVirtualScroll } from './virtual-scroll.js';
@@ -743,7 +743,7 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
   const pinBadge = post.is_pinned ? '<span class="pinned-badge">📌 Top</span>' : '';
   const icon = post.icon ? renderIcon(post.icon, 'list-icon') : '';
   
-  const imageHTML = post.image ? renderPostImage(post) : '';
+  const imageHTML = post.image ? renderPostImageForList(post) : '';
   
   const highlightedTitle = highlightText(post.title, searchQuery);
   const excerpt = truncate(post.content, 150);
@@ -780,30 +780,74 @@ function renderManuscriptCard(post, searchQuery = '', index = 0) {
   `;
 }
 
-function renderPostImage(post) {
+function renderPostImageForList(post) {
+  if (!post.image) return '';
+  
+  if (post.crop_data) {
+    const { x, y, width, height } = post.crop_data;
+    return `
+      <div class="post-image" style="position:relative; width:100%; height:200px; overflow:hidden; border-radius:8px; margin-bottom:20px;">
+        <picture>
+          <source srcset="${post.image}?format=webp&quality=80" type="image/webp">
+          <img src="${post.image}" 
+               style="position:absolute; width:100%; height:100%; object-fit:cover;"
+               loading="lazy"
+               alt="${post.title}">
+        </picture>
+      </div>
+    `;
+  }
+  
+  return `
+    <div class="post-image" style="width:100%; height:200px; overflow:hidden; border-radius:8px; margin-bottom:20px;">
+      <picture>
+        <source srcset="${post.image}?format=webp&quality=80" type="image/webp">
+        <img src="${post.image}" 
+             style="width:100%; height:100%; object-fit:cover;"
+             loading="lazy"
+             alt="${post.title}">
+      </picture>
+    </div>
+  `;
+}
+
+function renderSinglePostImage(post) {
   if (!post.image) return '';
   
   if (post.crop_data) {
     const { x, y, width, height } = post.crop_data;
     return `
       <div class="single-image-container" style="position:relative; width:100%; height:400px; overflow:hidden; border-radius:8px; margin-bottom:30px; border: 4px solid #D4AF37;">
-        <img src="${post.image}" style="position:absolute; max-width:none;"
-           onload="
-             const cW=this.parentElement.offsetWidth;
-             const cH=this.parentElement.offsetHeight;
-             const scale=Math.max(cW/${width},cH/${height});
-             this.width=this.naturalWidth*scale;
-             this.height=this.naturalHeight*scale;
-             this.style.left=((-${x}*scale)+(cW-${width}*scale)/2)+'px';
-             this.style.top=((-${y}*scale)+(cH-${height}*scale)/2)+'px';
-           ">
+        <picture>
+          <source srcset="${post.image}?format=webp&quality=85" type="image/webp">
+          <img src="${post.image}" 
+               style="position:absolute; max-width:none;"
+               onload="
+                 const cW=this.parentElement.offsetWidth;
+                 const cH=this.parentElement.offsetHeight;
+                 const scale=Math.max(cW/${width},cH/${height});
+                 this.width=this.naturalWidth*scale;
+                 this.height=this.naturalHeight*scale;
+                 this.style.left=$((-${x}*scale)+(cW-${width}*scale)/2)+'px';
+                 this.style.top=$((-${y}*scale)+(cH-${height}*scale)/2)+'px';
+               "
+               loading="lazy"
+               alt="${post.title}">
+        </picture>
       </div>
     `;
   }
   
   return `
-    <div class="single-image-container">
-      <img src="${post.image}" class="single-image" style="object-fit:${post.image_fit || 'contain'};">
+    <div class="single-image-container" style="width:100%; margin-bottom:30px;">
+      <picture>
+        <source srcset="${post.image}?format=webp&quality=85" type="image/webp">
+        <img src="${post.image}" 
+             class="single-image" 
+             style="width:100%; height:auto; object-fit:${post.image_fit || 'cover'}; border-radius:8px;"
+             loading="lazy"
+             alt="${post.title}">
+      </picture>
     </div>
   `;
 }
@@ -1103,7 +1147,7 @@ async function loadRelatedPosts(postId, tags) {
     
     container.innerHTML = related.map(post => `
       <div class="manuscript" data-post-id="${post.id}" style="padding: 20px; margin-bottom: 0; cursor: pointer;">
-        ${post.image ? `<img src="${post.image}" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;" loading="lazy">` : ''}
+        ${post.image ? `<picture><source srcset="${post.image}?format=webp&quality=85" type="image/webp"><img src="${post.image}" style="width:100%; height:150px; object-fit:cover; border-radius:4px; margin-bottom:10px;" loading="lazy" alt="${escapeHtml(post.title)}"></picture>` : ''}
         <h4 style="margin: 0 0 5px 0; font-size: 1rem; color: #8B0000;">${escapeHtml(post.title)}</h4>
         <small style="opacity: 0.6;">👁 ${post.view_count || 0}</small>
       </div>
