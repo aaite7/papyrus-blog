@@ -52,8 +52,6 @@ const router = {
             await Views.renderHome(APP, state);
             if (UI.initSnowEffect) UI.initSnowEffect();
             if (UI.initLive2D) UI.initLive2D();
-            const { initLatestCommentsWidget } = await import('./lib/comments-visualization.js');
-            setTimeout(initLatestCommentsWidget, 500);
         }
         else if (path === '/archive') {
             const Archive = await loadArchive();
