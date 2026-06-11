@@ -20,7 +20,7 @@ Disallow: /*.json$
 Disallow: /*?*=
 
 # 站点地图位置
-Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://papyrus-blog.chaitin.online/sitemap.xml
 
 # 特定搜索引擎设置
 # Google

@@ -855,8 +855,9 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     post.view_count = realViewCount || post.view_count || 0;
 
     await updatePostView(id, post);
-
+    
     if (updateMetaCallback) updateMetaCallback(post);
+    updatePostMetaTags(post);
     
     trackPageView(id, post.title);
     
@@ -1484,4 +1485,60 @@ export async function renderEditor(APP, id, router) {
   } catch (err) {
     APP.innerHTML = `<div class="error">Failed to load editor: ${err.message}</div>`;
   }
+}
+
+function updatePostMetaTags(post) {
+  const url = `https://papyrus-blog.chaitin.online/post/${post.id}`;
+  const imageUrl = post.image_url || 'https://papyrus-blog.chaitin.online/public/og-image.svg';
+  
+  document.title = `${post.title} | Minimalist`;
+  
+  const updateOrCreateMeta = (name, content, isProperty = false) => {
+    const attr = isProperty ? 'property' : 'name';
+    let meta = document.querySelector(`meta[${attr}="${name}"]`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute(attr, name);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', content);
+  };
+  
+  updateOrCreateMeta('description', post.excerpt || post.content?.substring(0, 160) || '');
+  updateOrCreateMeta('keywords', (post.tags || []).join(', '));
+  updateOrCreateMeta('og:title', `${post.title} | Minimalist`);
+  updateOrCreateMeta('og:description', post.excerpt || post.content?.substring(0, 200) || '', true);
+  updateOrCreateMeta('og:url', url, true);
+  updateOrCreateMeta('og:image', imageUrl, true);
+  updateOrCreateMeta('twitter:title', `${post.title} | Minimalist`);
+  updateOrCreateMeta('twitter:description', post.excerpt || post.content?.substring(0, 200) || '');
+  updateOrCreateMeta('twitter:image', imageUrl);
+  
+  const baseUri = 'https://papyrus-blog.chaitin.online';
+  const scriptId = 'structured-data';
+  let script = document.getElementById(scriptId);
+  if (!script) {
+    script = document.createElement('script');
+    script.id = scriptId;
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt || post.content?.substring(0, 160) || '',
+    image: imageUrl,
+    datePublished: post.created_at,
+    dateModified: post.updated_at || post.created_at,
+    author: { '@type': 'Organization', name: 'Minimalist Blog' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Minimalist Blog',
+      logo: { '@type': 'ImageObject', url: `${baseUri}/public/favicon.svg` }
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    keywords: post.tags || [],
+    inLanguage: 'zh-CN'
+  });
 }

@@ -14,50 +14,33 @@
   
   <!-- 首页 -->
   <url>
-    <loc>https://yourdomain.com/</loc>
+    <loc>https://papyrus-blog.chaitin.online/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-06-09</lastmod>
+    <lastmod>2026-06-11</lastmod>
   </url>
   
-  <!-- 管理页面 -->
   <url>
-    <loc>https://yourdomain.com/admin</loc>
+    <loc>https://papyrus-blog.chaitin.online/admin</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   
-  <!-- 登录页面 -->
   <url>
-    <loc>https://yourdomain.com/login</loc>
+    <loc>https://papyrus-blog.chaitin.online/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.1</priority>
   </url>
   
   <!-- 
-    文章页面示例 - 请在发布文章后添加
-    格式说明：
+    文章页面 - 请在发布文章后添加
+    格式:
     <url>
-      <loc>https://yourdomain.com/post/文章 ID</loc>
+      <loc>https://papyrus-blog.chaitin.online/post/文章 ID</loc>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
       <lastmod>YYYY-MM-DD</lastmod>
     </url>
   -->
-  
-  <!-- 示例文章页面 -->
-  <url>
-    <loc>https://yourdomain.com/post/sample-post-1</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-06-01</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://yourdomain.com/post/sample-post-2</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-05-15</lastmod>
-  </url>
   
 </urlset>
