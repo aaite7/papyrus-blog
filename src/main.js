@@ -2,8 +2,6 @@
 import { supabase } from './lib/supabase.js';
 import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
-import * as Views from './lib/views.js';
-import { postsService } from './lib/posts.js';
 import { injectDecorations } from './lib/decorations.js';
 import { makeCardsFocusable, initKeyboardNavigation } from './lib/keyboard-nav.js';
 import { optimizeExistingImages } from './lib/image-optimizer.js';
@@ -11,13 +9,16 @@ import { initGlobalErrorHandler } from './lib/error-boundary.js';
 import { initAnalytics } from './lib/analytics.js';
 import { injectFeedLinks } from './lib/rss-generator.js';
 import { initAutoDarkMode, toggleDarkModeManually } from './lib/auto-dark-mode.js';
-import { initLatestCommentsWidget } from './lib/comments-visualization.js';
-import { renderArchivePage } from './lib/archive.js';
-import { initInstantSearch } from './lib/instant-search.js';
 import { initI18n, initLanguageSwitcher } from './lib/i18n.js';
+import { initInstantSearch } from './lib/instant-search.js';
 
 const APP = document.getElementById('app');
 const state = { isAdmin: false, searchQuery: '' };
+
+// 动态导入大型模块
+const loadViews = () => import('./lib/views.js');
+const loadArchive = () => import('./lib/archive.js');
+const loadDecorations = () => Styles.loadDecorations ? Styles.loadDecorations() : Promise.resolve();
 
 const router = {
   init() {
@@ -36,7 +37,6 @@ const router = {
   async route() {
     const path = window.location.pathname;
     
-    // 渲染骨架屏
     APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
     window.scrollTo(0, 0);
 
@@ -46,17 +46,18 @@ const router = {
     }
     
     try {
+        const Views = await loadViews();
+        
         if (path === '/') {
             await Views.renderHome(APP, state);
-            // 启动下雪
             if (UI.initSnowEffect) UI.initSnowEffect();
-            // 启动 Live2D
             if (UI.initLive2D) UI.initLive2D();
-            // 加载最新评论
+            const { initLatestCommentsWidget } = await import('./lib/comments-visualization.js');
             setTimeout(initLatestCommentsWidget, 500);
         }
         else if (path === '/archive') {
-            await renderArchivePage(APP);
+            const Archive = await loadArchive();
+            await Archive.renderArchivePage(APP);
         }
         else if (path === '/login') Views.renderLogin(APP, this);
         else if (path === '/admin') state.isAdmin ? await Views.renderAdmin(APP, this) : this.navigate('/login');
@@ -141,7 +142,6 @@ async function updateAuthUI() {
 let isInitialized = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // 防止重复初始化
   if (isInitialized) return;
   isInitialized = true;
   
@@ -150,41 +150,25 @@ document.addEventListener('DOMContentLoaded', () => {
   if (UI.initSelectionSharer) UI.initSelectionSharer();
   if (UI.initReadingProgress) UI.initReadingProgress();
   
-  // 初始化 i18n
   initI18n();
-  
-  // 初始化全局错误处理
   initGlobalErrorHandler();
-  
-  // 初始化分析追踪
   initAnalytics();
-  
-  // 初始化自动暗黑模式
   initAutoDarkMode({ mode: 'smart', respectSystem: true });
-  
-  // 注入 RSS/Atom Feed 链接
   injectFeedLinks();
-  
-  // 初始化实时搜索
   initInstantSearch();
-  
-  // 初始化语言切换器
   initLanguageSwitcher();
   
-  // 优化图片
   setTimeout(() => optimizeExistingImages(), 500);
   
-  // 装饰样式
-  injectDecorations();
+  // 延迟加载装饰样式（非关键）
+  setTimeout(() => loadDecorations().then(() => injectDecorations()), 100);
   
-  // 键盘导航
   const initCardNav = () => {
     makeCardsFocusable();
     initKeyboardNavigation();
   };
   setTimeout(initCardNav, 200);
   
-  // 天气查询
   if(UI.initWeather) UI.initWeather();
 
   const logout = document.getElementById('logout-btn');
