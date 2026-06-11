@@ -913,13 +913,42 @@ export function injectDecorations() {
     .archive-group.collapsed .archive-count { transform: rotate(180deg); }
     
     /* 表单样式（Login/Admin） */
-    .form-container { max-width: 900px; margin: 80px auto; padding: 50px 60px; background: #fff; border-radius: 12px; border: 2px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-    body.dark-mode .form-container { background: #1e1e1e; border-color: rgba(212, 175, 55, 0.5); }
-    .form-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: #8B0000; text-align: center; margin-bottom: 30px; }
-    body.dark-mode .form-title { color: #f0f0f0; }
-    .form-container input[type="email"], .form-container input[type="password"], .form-container input[type="text"] { width: 100%; padding: 14px 18px; margin-bottom: 20px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; font-family: 'Lora', serif; font-size: 1rem; background: #fff; transition: all 0.3s; }
-    body.dark-mode .form-container input { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
-    .form-container input:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+    .form-container { 
+      max-width: 1100px; 
+      margin: 80px auto; 
+      padding: 50px 70px; 
+      background: #fff; 
+      border-radius: 12px; 
+      border: 2px solid rgba(212, 175, 55, 0.3); 
+      box-shadow: 0 10px 50px rgba(0,0,0,0.12), 
+                  inset 0 0 80px rgba(212, 175, 55, 0.03); 
+    }
+    body.dark-mode .form-container { 
+      background: #1e1e1e; 
+      border-color: rgba(212, 175, 55, 0.5); 
+    }
+    .form-container input[type="email"], 
+    .form-container input[type="password"], 
+    .form-container input[type="text"] { 
+      width: 100%; 
+      padding: 14px 18px; 
+      margin-bottom: 20px; 
+      border: 1px solid rgba(212, 175, 55, 0.3); 
+      border-radius: 8px; 
+      font-family: 'Lora', serif; 
+      font-size: 1rem; 
+      background: #fff; 
+      transition: all 0.3s; 
+    }
+    body.dark-mode .form-container input { 
+      background: #2a2420; 
+      border-color: rgba(212, 175, 55, 0.5); 
+    }
+    .form-container input:focus { 
+      outline: none; 
+      border-color: #D4AF37; 
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); 
+    }
     .btn-primary { background: linear-gradient(135deg, #D4AF37 0%, #B8860B 100%); color: #fff; border: none; padding: 14px 30px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: all 0.3s; }
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4); }
     .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
@@ -944,11 +973,54 @@ export function injectDecorations() {
     
     /* 编辑器样式 */
     .form-group { margin-bottom: 25px; }
-    .form-group label { display: block; font-family: 'Playfair Display', serif; font-size: 1rem; color: #8B0000; margin-bottom: 10px; font-weight: bold; }
+    .form-group label { 
+      display: block; 
+      font-family: 'Playfair Display', serif; 
+      font-size: 1.1rem; 
+      color: #8B0000; 
+      margin-bottom: 12px; 
+      font-weight: 600; 
+    }
     body.dark-mode .form-group label { color: #f0f0f0; }
-    .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"], .form-group select { width: 100%; padding: 14px 18px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; font-family: 'Lora', serif; font-size: 1rem; background: #fff; transition: all 0.3s; }
-    body.dark-mode .form-group input { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
+    .form-group input[type="text"], 
+    .form-group input[type="email"], 
+    .form-group input[type="password"], 
+    .form-group select { 
+      width: 100%; 
+      padding: 14px 18px; 
+      border: 1px solid rgba(212, 175, 55, 0.3); 
+      border-radius: 8px; 
+      font-family: 'Lora', serif; 
+      font-size: 1rem; 
+      background: #fff; 
+      transition: all 0.3s; 
+    }
+    body.dark-mode .form-group input { 
+      background: #2a2420; 
+      border-color: rgba(212, 175, 55, 0.5); 
+    }
+    .form-group input:focus, .form-group select:focus { 
+      outline: none; 
+      border-color: #D4AF37; 
+      box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); 
+    }
+    
+    /* 响应式适配 */
+    @media (max-width: 768px) {
+      .form-container {
+        max-width: 100%;
+        margin: 40px 20px;
+        padding: 35px 25px;
+      }
+      .editor-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .editor-textarea {
+        min-height: 400px;
+        padding: 20px;
+      }
+    }
     
     /* 图标输入 */
     .icon-input-wrapper { display: flex; align-items: flex-end; gap: 15px; margin-bottom: 25px; padding: 20px; background: rgba(212, 175, 55, 0.05); border-radius: 8px; border: 1px solid rgba(212, 175, 55, 0.2); }
@@ -956,14 +1028,56 @@ export function injectDecorations() {
     body.dark-mode .current-icon-preview { background: #2a2420; }
     
     /* 编辑器容器 */
-    .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; min-height: 400px; }
-    .editor-pane { display: flex; flex-direction: column; }
-    .editor-pane.split { grid-column: 1 / -1; }
-    .editor-textarea { width: 100%; flex: 1; min-height: 400px; padding: 20px; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; font-family: 'Lora', serif; font-size: 1rem; line-height: 1.8; background: #fff; resize: vertical; transition: all 0.3s; }
-    body.dark-mode .editor-textarea { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
-    .editor-textarea:focus { outline: none; border-color: #D4AF37; box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2); }
-    .preview-pane { background: #fff; border: 1px solid rgba(212, 175, 55, 0.3); border-radius: 8px; padding: 20px; overflow-y: auto; max-height: 600px; }
-    body.dark-mode .preview-pane { background: #2a2420; border-color: rgba(212, 175, 55, 0.5); }
+    .editor-container { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 25px; 
+      min-height: 550px; 
+    }
+    .editor-pane { 
+      display: flex; 
+      flex-direction: column; 
+    }
+    .editor-pane.split { 
+      grid-column: 1 / -1; 
+    }
+    .editor-textarea { 
+      width: 100%; 
+      flex: 1; 
+      min-height: 550px; 
+      padding: 25px; 
+      border: 2px solid rgba(212, 175, 55, 0.3); 
+      border-radius: 10px; 
+      font-family: 'Lora', serif; 
+      font-size: 1.05rem; 
+      line-height: 1.9; 
+      background: #fff; 
+      resize: vertical; 
+      transition: all 0.3s;
+      box-shadow: inset 0 2px 8px rgba(43, 24, 16, 0.05);
+    }
+    body.dark-mode .editor-textarea { 
+      background: #2a2420; 
+      border-color: rgba(212, 175, 55, 0.5); 
+    }
+    .editor-textarea:focus { 
+      outline: none; 
+      border-color: #D4AF37; 
+      box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25), inset 0 2px 8px rgba(43, 24, 16, 0.05);
+    }
+    .preview-pane { 
+      background: #fff; 
+      border: 2px solid rgba(212, 175, 55, 0.3); 
+      border-radius: 10px; 
+      padding: 25px; 
+      overflow-y: auto; 
+      max-height: 650px;
+      box-shadow: 0 4px 20px rgba(43, 24, 16, 0.08);
+    }
+    body.dark-mode .preview-pane { 
+      background: #2a2420; 
+      border-color: rgba(212, 175, 55, 0.5); 
+    }
     .preview-pane.hidden { display: none; }
     .article-content { line-height: 1.8; }
     .article-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
