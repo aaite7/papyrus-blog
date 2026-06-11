@@ -20,25 +20,20 @@ const loadViews = () => import('./lib/views.js');
 const loadArchive = () => import('./lib/archive.js');
 const loadDecorations = () => Styles.loadDecorations ? Styles.loadDecorations() : Promise.resolve();
 
+let scrollPositions = new Map();
+
 const router = {
-  init() {
-    window.addEventListener('popstate', () => this.route());
-    document.body.addEventListener('click', e => {
-      const link = e.target.closest('[data-link]');
-      if (link) { e.preventDefault(); this.navigate(link.dataset.link); }
-      const card = e.target.closest('[data-post-id]');
-      if (card && !e.target.closest('button') && !e.target.closest('a')) {
-        this.navigate(`/post/${card.dataset.postId}`);
-      }
-    });
-    this.route();
-  },
   navigate(path) { window.history.pushState({}, '', path); this.route(); },
   async route() {
     const path = window.location.pathname;
     
+    // 保存当前滚动位置
+    const currentScroll = window.scrollY;
+    if (window.location.pathname !== path) {
+      scrollPositions.set(window.location.pathname, currentScroll);
+    }
+    
     APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
-    window.scrollTo(0, 0);
 
     const live2dWidget = document.getElementById('live2d-widget');
     if (live2dWidget) {
@@ -52,10 +47,20 @@ const router = {
             await Views.renderHome(APP, state);
             if (UI.initSnowEffect) UI.initSnowEffect();
             if (UI.initLive2D) UI.initLive2D();
+            // 恢复首页滚动位置
+            const scrollY = scrollPositions.get(path);
+            if (scrollY !== undefined) {
+              setTimeout(() => window.scrollTo(0, scrollY), 100);
+            }
         }
         else if (path === '/archive') {
             const Archive = await loadArchive();
             await Archive.renderArchivePage(APP);
+            // 恢复归档页滚动位置
+            const scrollY = scrollPositions.get(path);
+            if (scrollY !== undefined) {
+              setTimeout(() => window.scrollTo(0, scrollY), 100);
+            }
         }
         else if (path === '/login') Views.renderLogin(APP, this);
         else if (path === '/admin') state.isAdmin ? await Views.renderAdmin(APP, this) : this.navigate('/login');
@@ -65,8 +70,21 @@ const router = {
             await Views.renderPost(APP, path.split('/post/')[1], this, UI.updatePageMeta);
             if(UI.highlightCode) UI.highlightCode();
             if(UI.initReadingProgress) UI.initReadingProgress();
+            // 恢复文章页滚动位置（从 hash 或保存的位置）
+            const hash = window.location.hash;
+            if (hash) {
+              const el = document.querySelector(hash);
+              if (el) {
+                setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+              }
+            } else {
+              const scrollY = scrollPositions.get(path);
+              if (scrollY !== undefined) {
+                setTimeout(() => window.scrollTo(0, scrollY), 100);
+              }
+            }
         }
-        else APP.innerHTML = '<div class="error">404: Scroll not found</div>';
+        else APP.innerHTML = '<div class="error">404: Page not found</div>';
     } catch (e) {
         console.error(e); APP.innerHTML = `<div class="error">Error: ${e.message}</div>`;
     }
