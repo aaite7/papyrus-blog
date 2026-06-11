@@ -117,7 +117,6 @@ async function updateAuthUI() {
     }
     logoutBtn.classList.add('hidden');
   } finally {
-    // 隐藏加载状态
     if (adminLink) {
       adminLink.classList.remove('loading');
       const authLoading = adminLink.querySelector('.auth-loading');
@@ -137,6 +136,22 @@ async function updateAuthUI() {
       document.body.classList.add('dark-mode');
       if(toggleBtn) toggleBtn.textContent = '☀';
   }
+}
+
+function initShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+      if (e.key === 'Escape') document.activeElement.blur();
+      return;
+    }
+    const key = e.key || '';
+    if (key === '/') {
+      e.preventDefault();
+      document.getElementById('search')?.focus();
+    }
+    if (key.toLowerCase() === 'j') window.scrollBy({ top: 300, behavior: 'smooth' });
+    if (key.toLowerCase() === 'k') window.scrollBy({ top: -300, behavior: 'smooth' });
+  });
 }
 
 let isInitialized = false;
