@@ -229,6 +229,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
     
+    // Logo 点击返回首页
+    const logo = document.querySelector('.logo');
+    if (logo) {
+      logo.addEventListener('click', () => {
+        router.navigate('/');
+      });
+    }
+    
     // 点击外部关闭菜单
     document.addEventListener('click', (e) => {
       if (!navToggle.contains(e.target) && !navLinks.contains(e.target)) {
