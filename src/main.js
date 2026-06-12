@@ -2,7 +2,6 @@
 import { supabase } from './lib/supabase.js';
 import * as Styles from './lib/styles.js';
 import * as UI from './lib/ui.js';
-import { injectDecorations } from './lib/decorations.js';
 import { makeCardsFocusable, initKeyboardNavigation } from './lib/keyboard-nav.js';
 import { optimizeExistingImages } from './lib/image-optimizer.js';
 import { initGlobalErrorHandler } from './lib/error-boundary.js';
@@ -18,7 +17,7 @@ const state = { isAdmin: false, searchQuery: '' };
 // 动态导入大型模块
 const loadViews = () => import('./lib/views.js');
 const loadArchive = () => import('./lib/archive.js');
-const loadDecorations = () => Styles.loadDecorations ? Styles.loadDecorations() : Promise.resolve();
+const loadDecorations = () => import('./lib/decorations.js').then(m => m.injectDecorations());
 
 let scrollPositions = new Map();
 let previousPath = null;
@@ -184,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => optimizeExistingImages(), 500);
   
   // 延迟加载装饰样式（非关键）
-  setTimeout(() => loadDecorations().then(() => injectDecorations()), 100);
+  setTimeout(() => loadDecorations(), 100);
   
   const initCardNav = () => {
     makeCardsFocusable();

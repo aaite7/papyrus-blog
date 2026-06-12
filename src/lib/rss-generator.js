@@ -7,7 +7,7 @@ import { postsService } from './posts.js';
  */
 const CONFIG = {
   siteTitle: 'Minimalist Blog - 古风极简博客',
-  siteUrl: 'https://yourdomain.com',
+  siteUrl: 'https://minimalist.ggff.net',
   siteDescription: '一个受古代卷轴和手写稿启发的极简博客',
   language: 'zh-CN',
   ttl: 60, // 分钟
