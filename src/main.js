@@ -44,7 +44,7 @@ const router = {
         const Views = await loadViews();
         
         if (path === '/') {
-            await Views.renderHome(APP, state);
+            await Views.renderHome(APP, state, this);
             if (UI.initSnowEffect) UI.initSnowEffect();
             if (UI.initLive2D) UI.initLive2D();
         }

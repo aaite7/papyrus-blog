@@ -28,7 +28,7 @@ function renderIcon(iconStr, className = '') {
 }
 
 // --- Home ---
-export async function renderHome(APP, state) {
+export async function renderHome(APP, state, router) {
   // 初始化全局错误处理
   initGlobalErrorHandler();
   
@@ -176,12 +176,13 @@ export async function renderHome(APP, state) {
       setTimeout(() => {
         makeCardsFocusable();
         initKeyboardNavigation();
+        bindCardClickEvents(router);
       }, 200);
     }
     
     initSearchWithDebounce(state, renderList);
     initCategoryFilter(state, renderList);
-    initWidgetInteractions();
+    initWidgetInteractions(router);
     initSearchHistoryEnhancements(state, renderList);
   };
   
@@ -432,7 +433,7 @@ function renderCategoryFilter(categories, selected) {
 /**
  * 初始化小部件交互
  */
-function initWidgetInteractions() {
+function initWidgetInteractions(router) {
   // 侧边栏搜索
   const sidebarSearch = document.getElementById('sidebar-search');
   const mainSearch = document.getElementById('search');
@@ -477,6 +478,34 @@ function initWidgetInteractions() {
       }
     });
   }
+  
+  // 绑定卡片点击事件
+  bindCardClickEvents();
+}
+
+/**
+ * 绑定文章卡片点击事件
+ */
+function bindCardClickEvents(routerInstance) {
+  document.querySelectorAll('[data-post-id]').forEach(card => {
+    // 移除旧的事件监听器（如果有）
+    const newCard = card.cloneNode(true);
+    card.parentNode.replaceChild(newCard, card);
+    
+    // 添加点击事件
+    newCard.addEventListener('click', (e) => {
+      // 避免与内部按钮冲突
+      if (e.target.closest('button, a, input')) return;
+      
+      const postId = newCard.dataset.postId;
+      if (postId && routerInstance) {
+        routerInstance.navigate(`/post/${postId}`);
+      }
+    });
+    
+    // 确保有 tabindex
+    newCard.setAttribute('tabindex', '0');
+  });
 }
 
 /**
