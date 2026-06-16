@@ -480,14 +480,14 @@ function initWidgetInteractions(router) {
   }
   
   // 绑定卡片点击事件
-  bindCardClickEvents();
+  bindCardClickEvents(router);
 }
 
 /**
  * 绑定文章卡片点击事件
  */
 function bindCardClickEvents(routerInstance) {
-  document.querySelectorAll('[data-post-id]').forEach(card => {
+  document.querySelectorAll('.manuscript[data-post-id]').forEach(card => {
     // 移除旧的事件监听器（如果有）
     const newCard = card.cloneNode(true);
     card.parentNode.replaceChild(newCard, card);
