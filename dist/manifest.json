@@ -1,21 +1,16 @@
 {
-  "name": "Minimalist Blog - 古风极简博客",
+  "name": "Minimalist Blog",
   "short_name": "Minimalist",
-  "description": "一个受古代卷轴和手写稿启发的极简博客",
+  "description": "古风极简博客",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4ebe1",
+  "background_color": "#f9f5eb",
   "theme_color": "#D4AF37",
-  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/public/favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
-  ],
-  "categories": ["blog", "reading", "news"],
-  "lang": "zh-CN",
-  "dir": "ltr"
+  ]
 }

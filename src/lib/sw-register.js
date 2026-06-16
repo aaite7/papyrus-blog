@@ -11,7 +11,7 @@ export function registerServiceWorker() {
   
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('/service-worker.js');
+      const registration = await navigator.serviceWorker.register('/sw.js');
       console.log('Service Worker 注册成功:', registration.scope);
       
       // 检查更新

@@ -682,6 +682,34 @@ export function injectDecorations() {
       color: #c9b896;
     }
     
+    /* 评论区暗色模式 */
+    body.dark-mode .comment-item {
+      border-bottom-color: rgba(255,255,255,0.08) !important;
+    }
+    body.dark-mode .comment-item b,
+    body.dark-mode .comment-item p { color: #e0d5c0 !important; }
+    body.dark-mode .comment-item small { color: #8a8170 !important; }
+    
+    body.dark-mode .divider { color: #b8a060; }
+    
+    body.dark-mode #comment-form input,
+    body.dark-mode #comment-form textarea {
+      background: #1e1e1e;
+      color: #e0d5c0;
+      border-color: rgba(212, 175, 55, 0.3);
+    }
+    body.dark-mode #comment-form input::placeholder,
+    body.dark-mode #comment-form textarea::placeholder {
+      color: #6a6450;
+    }
+    
+    body.dark-mode #reply-preview {
+      background: #2a2420 !important;
+      border-left-color: rgba(212, 175, 55, 0.6) !important;
+      color: #b8a588 !important;
+    }
+    body.dark-mode #reply-preview span { color: #8a8170 !important; }
+    
     /* 响应式适配 */
     @media (max-width: 768px) {
       .single-manuscript {

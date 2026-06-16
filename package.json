@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sitemap": "node --env-file=.env scripts/generate-sitemap.mjs"
   },
   "devDependencies": {
     "terser": "^5.48.0",
@@ -13,6 +14,6 @@
     "vite-plugin-imagemin": "^0.6.1"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.86.0"
+    "@supabase/supabase-js": "^2.108.2"
   }
 }
