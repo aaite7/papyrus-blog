@@ -1575,10 +1575,7 @@ export async function renderEditor(APP, id, router) {
       save(true);
     });
     
-    // Cancel 按钮
-    document.querySelectorAll('[data-link]').forEach(btn => {
-      btn.addEventListener('click', () => router.navigate(btn.dataset.link));
-    });
+    // Cancel 按钮 — 使用全局 data-link 委托，此处无需重复绑定
   } catch (err) {
     APP.innerHTML = `<div class="error">Failed to load editor: ${err.message}</div>`;
   }

@@ -256,4 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAuthUI();
   initShortcuts();
   router.route();
+
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-link]');
+    if (link) {
+      e.preventDefault();
+      router.navigate(link.dataset.link);
+    }
+  });
 });
