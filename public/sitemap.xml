@@ -14,20 +14,20 @@
   
   <!-- 首页 -->
   <url>
-    <loc>https://papyrus-blog.chaitin.online/</loc>
+    <loc>https://minimalist.ggff.net/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <lastmod>2026-06-11</lastmod>
   </url>
   
   <url>
-    <loc>https://papyrus-blog.chaitin.online/admin</loc>
+    <loc>https://minimalist.ggff.net/admin</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   
   <url>
-    <loc>https://papyrus-blog.chaitin.online/login</loc>
+    <loc>https://minimalist.ggff.net/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.1</priority>
   </url>
@@ -36,7 +36,7 @@
     文章页面 - 请在发布文章后添加
     格式:
     <url>
-      <loc>https://papyrus-blog.chaitin.online/post/文章 ID</loc>
+      <loc>https://minimalist.ggff.net/post/文章 ID</loc>
       <changefreq>monthly</changefreq>
       <priority>0.8</priority>
       <lastmod>YYYY-MM-DD</lastmod>

@@ -110,7 +110,7 @@ export function renderLatestCommentsWidget(comments) {
                 <div class="lc-author">${escapeHtml(comment.author_name || '匿名')}</div>
                 <div class="lc-excerpt">${escapeHtml(truncate(comment.content, 50))}</div>
                 <div class="lc-meta">
-                  <span class="lc-post">${escapeHtml(truncate(comment.post_title, 20))}</span>
+                  <span class="lc-post">${escapeHtml(truncate(comment.post_title || '', 20))}</span>
                   <span class="lc-time">${formatTime(comment.created_at)}</span>
                 </div>
               </div>

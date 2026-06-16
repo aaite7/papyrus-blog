@@ -255,5 +255,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   updateAuthUI();
   initShortcuts();
-  router.init();
+  router.route();
 });

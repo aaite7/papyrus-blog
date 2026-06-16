@@ -24,6 +24,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ['.monkeycode-ai.online'],
     headers: {
       'X-DNS-Prefetch-Control': 'on',
       'X-Content-Type-Options': 'nosniff',

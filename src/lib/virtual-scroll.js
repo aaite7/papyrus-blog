@@ -68,6 +68,10 @@ export function initVirtualScroll(containerSelector, items, renderItem) {
   wrapper.appendChild(viewport);
   container.innerHTML = '';
   container.appendChild(wrapper);
+  
+  // 保存 wrapper 和 content 到 state 供外部函数使用
+  state.wrapper = wrapper;
+  state.content = content;
 
   // 监听滚动
   let ticking = false;

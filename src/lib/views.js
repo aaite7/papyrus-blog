@@ -5,7 +5,6 @@ import { commentsService } from './comments.js';
 import { generateTOC, injectHeadingIds, renderTOC } from './toc.js';
 import * as UI from './ui.js';
 import { highlightText, truncate, readingTime, debounce, escapeHtml } from './utils.js';
-import { preloadImage } from './ui.js';
 import { updatePageMeta, addStructuredData, addWebSiteStructuredData } from './seo.js';
 import { saveSearchHistory, showSearchHistory, hideSearchHistory } from './search-history.js';
 import { makeCardsFocusable, initKeyboardNavigation } from './keyboard-nav.js';
@@ -55,6 +54,8 @@ export async function renderHome(APP, state, router) {
   }
   
   const renderList = (append = false) => {
+    // 暴露给无限滚动使用
+    window.__renderList = renderList;
     let filtered = state.posts;
     
     if (state.selectedCategory) {
@@ -148,8 +149,11 @@ export async function renderHome(APP, state, router) {
       if (mainContentEl) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = mainContent;
-        const newManuscripts = tempDiv.querySelector('.manuscripts').innerHTML;
-        APP.querySelector('.manuscripts').innerHTML = newManuscripts;
+        const newManuscriptsEl = tempDiv.querySelector('.manuscripts');
+        if (!newManuscriptsEl) return;
+        const manuscriptsEl = APP.querySelector('.manuscripts');
+        if (!manuscriptsEl) return;
+        manuscriptsEl.innerHTML = newManuscriptsEl.innerHTML;
         
         const loadingEl = APP.querySelector('.loading-spinner');
         if (loadingEl) loadingEl.remove();
@@ -161,17 +165,17 @@ export async function renderHome(APP, state, router) {
         if (triggerEl) triggerEl.remove();
         
         if (state.isLoading) {
-          APP.querySelector('.manuscripts').insertAdjacentHTML('afterend', renderLoadingSpinner());
+          manuscriptsEl.insertAdjacentHTML('afterend', renderLoadingSpinner());
         } else if (!state.hasMore) {
-          APP.querySelector('.manuscripts').insertAdjacentHTML('afterend', renderEndMessage());
+          manuscriptsEl.insertAdjacentHTML('afterend', renderEndMessage());
         } else {
-          APP.querySelector('.manuscripts').insertAdjacentHTML('afterend', renderInfiniteScrollTrigger());
-          setTimeout(initInfiniteScroll, 100);
+          manuscriptsEl.insertAdjacentHTML('afterend', renderInfiniteScrollTrigger());
+          setTimeout(() => initInfiniteScroll(state), 100);
         }
       }
     } else {
       APP.innerHTML = mainContent + renderScrollTopButton();
-      setTimeout(initInfiniteScroll, 100);
+      setTimeout(() => initInfiniteScroll(state), 100);
       setTimeout(initScrollTopButton, 100);
       setTimeout(() => {
         makeCardsFocusable();
@@ -545,7 +549,7 @@ function renderInfiniteScrollTrigger() {
  * 初始化无限滚动
  */
 let scrollObserver = null;
-function initInfiniteScroll() {
+function initInfiniteScroll(state) {
   const trigger = document.querySelector('.scroll-trigger');
   if (!trigger || !state.hasMore || state.isLoading) return;
   
@@ -578,9 +582,6 @@ function initInfiniteScroll() {
   
   scrollObserver.observe(trigger);
 }
-
-// 暴露 renderList 给无限滚动使用
-let state = {};
 
 /**
  * 渲染回到顶部按钮
@@ -934,6 +935,11 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     
     trackPageView(id, post.title);
     
+    if (typeof DOMPurify === 'undefined' || typeof marked === 'undefined') {
+      APP.innerHTML = '<div class="error">页面依赖加载失败，请刷新页面重试</div>';
+      return;
+    }
+    
     const content = DOMPurify.sanitize(marked.parse(post.content || '', { breaks: true, gfm: true }));
     const comments = await commentsService.getCommentsByPostId(id);
     const likes = post.likes || 0;
@@ -1004,8 +1010,7 @@ export async function renderPost(APP, id, router, updateMetaCallback) {
     UI.initReadingProgress();
     UI.initLazyLoad();
     
-    const ReadingTracker = await import('./reading-progress.js');
-    ReadingTracker.initReadingTracker(id);
+    initReadingTracker(id);
 
     updatePageMeta(post);
     addStructuredData(post);
@@ -1212,7 +1217,7 @@ function initCardHoverPreload() {
     card.addEventListener('mouseenter', () => {
       const img = card.querySelector('img');
       if (img && img.src) {
-        preloadImage(img.src);
+        UI.preloadImage(img.src);
       }
     });
   });
@@ -1572,8 +1577,8 @@ export async function renderEditor(APP, id, router) {
 }
 
 function updatePostMetaTags(post) {
-  const url = `https://papyrus-blog.chaitin.online/post/${post.id}`;
-  const imageUrl = post.image_url || 'https://papyrus-blog.chaitin.online/public/og-image.svg';
+  const url = `https://minimalist.ggff.net/post/${post.id}`;
+  const imageUrl = post.image_url || 'https://minimalist.ggff.net/public/og-image.svg';
   
   document.title = `${post.title} | Minimalist`;
   
@@ -1598,7 +1603,7 @@ function updatePostMetaTags(post) {
   updateOrCreateMeta('twitter:description', post.excerpt || post.content?.substring(0, 200) || '');
   updateOrCreateMeta('twitter:image', imageUrl);
   
-  const baseUri = 'https://papyrus-blog.chaitin.online';
+  const baseUri = 'https://minimalist.ggff.net';
   const scriptId = 'structured-data';
   let script = document.getElementById(scriptId);
   if (!script) {
