@@ -1,4 +1,5 @@
 // src/lib/image-optimizer.js
+import { escapeHtml } from './utils.js';
 
 /**
  * 检测 WebP 支持
@@ -253,13 +254,4 @@ export function getImageOptimizationTips() {
       '考虑使用 CDN 自动优化'
     ]
   };
-}
-
-/**
- * 转义 HTML
- */
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }

@@ -184,10 +184,10 @@ export async function renderHome(APP, state, router) {
       }, 200);
     }
     
-    initSearchWithDebounce(state, renderList);
-    initCategoryFilter(state, renderList);
+    const renderListWithHistory = initSearchHistoryEnhancements(state, renderList);
+    initSearchWithDebounce(state, renderListWithHistory);
+    initCategoryFilter(state, renderListWithHistory);
     initWidgetInteractions(router);
-    initSearchHistoryEnhancements(state, renderList);
   };
   
   renderList();
@@ -630,34 +630,27 @@ function initScrollTopButton() {
  */
 function initSearchHistoryEnhancements(state, renderList) {
   const searchInput = document.getElementById('search');
-  if (!searchInput) return;
-  
+  if (!searchInput) return renderList;
+
   // 聚焦时显示搜索历史
   searchInput.addEventListener('focus', () => {
     showSearchHistory(searchInput);
   });
-  
+
   // 点击外部关闭
   document.addEventListener('click', (e) => {
     if (!searchInput.contains(e.target)) {
       hideSearchHistory();
     }
   });
-  
-  // 搜索时保存历史
-  const originalRenderList = renderList;
-  const saveAndRender = (append = false) => {
+
+  // 返回包装后的 renderList，自动保存搜索历史
+  return (append = false) => {
     if (state.searchQuery && state.searchQuery.trim().length > 0) {
       saveSearchHistory(state.searchQuery);
     }
-    originalRenderList(append);
+    renderList(append);
   };
-  
-  // 重新绑定搜索事件
-  searchInput.addEventListener('input', debounce((e) => {
-    state.searchQuery = e.target.value.toLowerCase();
-    saveAndRender();
-  }, 300));
 }
 
 /**
@@ -887,6 +880,7 @@ function initTOC(content) {
   if (tocHeadings.length === 0) return;
   
   const tocContainer = document.getElementById('toc');
+  if (!tocContainer) return;
   tocContainer.innerHTML = renderTOC(tocHeadings);
   
   tocContainer.querySelectorAll('a').forEach(link => {
@@ -1133,10 +1127,16 @@ function initCommentForm(postId, router) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const name = document.getElementById('cn').value;
-    const email = document.getElementById('ce').value;
-    const content = document.getElementById('cc').value;
-    const parentId = document.getElementById('parent-id').value;
+    const nameEl = document.getElementById('cn');
+    const emailEl = document.getElementById('ce');
+    const contentEl = document.getElementById('cc');
+    const parentIdEl = document.getElementById('parent-id');
+    if (!nameEl || !emailEl || !contentEl || !parentIdEl) return;
+    
+    const name = nameEl.value;
+    const email = emailEl.value;
+    const content = contentEl.value;
+    const parentId = parentIdEl.value;
     
     try {
       await commentsService.createComment(postId, name, email, content, parentId || null);
@@ -1160,14 +1160,22 @@ function initReplyButtons(postId, router) {
       const commentItem = e.target.closest('.comment-item');
       const authorName = commentItem?.querySelector('b')?.textContent || 'Anonymous';
       
-      document.getElementById('parent-id').value = parentId;
-      document.getElementById('reply-preview').style.display = 'block';
-      document.getElementById('reply-to-name').textContent = authorName;
-      document.getElementById('cc').focus();
+      const parentIdEl = document.getElementById('parent-id');
+      const replyPreviewEl = document.getElementById('reply-preview');
+      const replyNameEl = document.getElementById('reply-to-name');
+      const cancelReplyEl = document.getElementById('cancel-reply');
+      const contentInput = document.getElementById('cc');
       
-      document.getElementById('cancel-reply').addEventListener('click', () => {
-        document.getElementById('parent-id').value = '';
-        document.getElementById('reply-preview').style.display = 'none';
+      if (!parentIdEl || !replyPreviewEl || !replyNameEl) return;
+      
+      parentIdEl.value = parentId;
+      replyPreviewEl.style.display = 'block';
+      replyNameEl.textContent = authorName;
+      contentInput?.focus();
+      
+      cancelReplyEl?.addEventListener('click', () => {
+        parentIdEl.value = '';
+        replyPreviewEl.style.display = 'none';
       });
     });
   });

@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js';
 import { showToast } from './ui.js';
+import { escapeHtml } from './utils.js';
 
 export const commentsService = {
   /**
@@ -131,13 +132,3 @@ export const commentsService = {
   }
 };
 
-/**
- * 转义 HTML 特殊字符
- * @param {string} text 
- * @returns {string}
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
