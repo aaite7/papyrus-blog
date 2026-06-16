@@ -347,6 +347,67 @@ export function injectDecorations() {
     .footer-copy { color: #999; font-size: 0.9rem; }
     body.dark-mode .footer-copy { color: #777; }
     
+    /* 文章操作浮动栏 */
+    .floating-bar {
+      position: fixed;
+      left: calc((100vw - 800px) / 2 - 80px);
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 100;
+    }
+    .action-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(212,175,55,0.3);
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      color: #8B0000;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      position: relative;
+    }
+    .action-btn:hover {
+      background: rgba(212,175,55,0.1);
+      border-color: #D4AF37;
+      transform: scale(1.1);
+      box-shadow: 0 4px 16px rgba(212,175,55,0.25);
+    }
+    .action-btn.liked {
+      color: #e74c3c;
+      border-color: rgba(231,76,60,0.4);
+    }
+    .btn-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #e74c3c;
+      color: #fff;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      min-width: 18px;
+      text-align: center;
+      line-height: 1.2;
+    }
+    body.dark-mode .action-btn {
+      background: rgba(30,30,30,0.9);
+      color: #D4AF37;
+      border-color: rgba(212,175,55,0.2);
+    }
+    body.dark-mode .action-btn:hover {
+      background: rgba(212,175,55,0.15);
+      border-color: #D4AF37;
+    }
+    
     /* 文章详情页 - 古风纸张效果 */
     .single-manuscript {
       max-width: 800px;
@@ -633,6 +694,29 @@ export function injectDecorations() {
       }
       
       .article-content {
+        font-size: 1rem;
+      }
+
+      .floating-bar {
+        position: fixed;
+        left: 50%;
+        top: auto;
+        bottom: 20px;
+        transform: translateX(-50%);
+        flex-direction: row;
+        gap: 8px;
+        background: rgba(255,255,255,0.95);
+        padding: 8px 16px;
+        border-radius: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        border: 1px solid rgba(212,175,55,0.2);
+      }
+      body.dark-mode .floating-bar {
+        background: rgba(30,30,30,0.95);
+      }
+      .action-btn {
+        width: 40px;
+        height: 40px;
         font-size: 1rem;
       }
     }
