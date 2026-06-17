@@ -6,12 +6,16 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "sitemap": "node --env-file=.env scripts/generate-sitemap.mjs"
+    "sitemap": "node --env-file=.env scripts/generate-sitemap.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
+    "jsdom": "^29.1.1",
     "terser": "^5.48.0",
     "vite": "^5.0.0",
-    "vite-plugin-imagemin": "^0.6.1"
+    "vite-plugin-imagemin": "^0.6.1",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2"

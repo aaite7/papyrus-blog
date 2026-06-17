@@ -10,6 +10,7 @@ import { injectFeedLinks } from './lib/rss-generator.js';
 import { initAutoDarkMode, toggleDarkModeManually } from './lib/auto-dark-mode.js';
 import { initI18n, initLanguageSwitcher } from './lib/i18n.js';
 import { initInstantSearch } from './lib/instant-search.js';
+import { registerServiceWorker } from './lib/sw-register.js';
 
 const APP = document.getElementById('app');
 const state = { isAdmin: false, searchQuery: '' };
@@ -179,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
   injectFeedLinks();
   initInstantSearch();
   initLanguageSwitcher();
+  registerServiceWorker();
   
   setTimeout(() => optimizeExistingImages(), 500);
   

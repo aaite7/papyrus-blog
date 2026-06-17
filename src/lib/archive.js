@@ -32,7 +32,7 @@ export async function getArchivedPosts() {
     
     // 转换为数组并排序
     return Object.values(groups).sort((a, b) => {
-      const keyA = `${a.year}${String(a.month).padStart(2, '0')}`;
+      const keyA = `${a.year}-${String(a.month).padStart(2, '0')}`;
       const keyB = `${b.year}-${String(b.month).padStart(2, '0')}`;
       return keyB.localeCompare(keyA);
     });
