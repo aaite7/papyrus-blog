@@ -1154,29 +1154,34 @@ function initCommentForm(postId, router) {
  * @param {Object} router - 路由对象
  */
 function initReplyButtons(postId, router) {
+  const parentIdEl = document.getElementById('parent-id');
+  const replyPreviewEl = document.getElementById('reply-preview');
+  const replyNameEl = document.getElementById('reply-to-name');
+  const cancelReplyEl = document.getElementById('cancel-reply');
+  const contentInput = document.getElementById('cc');
+
+  if (!parentIdEl || !replyPreviewEl || !replyNameEl) return;
+
+  let cancelBound = false;
+
   document.querySelectorAll('.reply-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       const parentId = e.target.dataset.parentId;
       const commentItem = e.target.closest('.comment-item');
       const authorName = commentItem?.querySelector('b')?.textContent || 'Anonymous';
-      
-      const parentIdEl = document.getElementById('parent-id');
-      const replyPreviewEl = document.getElementById('reply-preview');
-      const replyNameEl = document.getElementById('reply-to-name');
-      const cancelReplyEl = document.getElementById('cancel-reply');
-      const contentInput = document.getElementById('cc');
-      
-      if (!parentIdEl || !replyPreviewEl || !replyNameEl) return;
-      
+
       parentIdEl.value = parentId;
       replyPreviewEl.style.display = 'block';
       replyNameEl.textContent = authorName;
       contentInput?.focus();
-      
-      cancelReplyEl?.addEventListener('click', () => {
-        parentIdEl.value = '';
-        replyPreviewEl.style.display = 'none';
-      });
+
+      if (!cancelBound && cancelReplyEl) {
+        cancelBound = true;
+        cancelReplyEl.addEventListener('click', () => {
+          parentIdEl.value = '';
+          replyPreviewEl.style.display = 'none';
+        });
+      }
     });
   });
 }
@@ -1475,6 +1480,7 @@ export async function renderEditor(APP, id, router) {
     
     els.wrapper.onmousedown = e => {
       e.preventDefault();
+      if (isDrawing) return;
       isDrawing = true;
       const r = els.img.getBoundingClientRect();
       startX = e.clientX - r.left;
@@ -1484,8 +1490,9 @@ export async function renderEditor(APP, id, router) {
       els.box.style.width = '0px';
       els.box.style.height = '0px';
       els.box.style.display = 'block';
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      window.addEventListener('mouseleave', onUp);
     };
     
     const onMove = e => {
@@ -1501,8 +1508,9 @@ export async function renderEditor(APP, id, router) {
     
     const onUp = () => {
       isDrawing = false;
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('mouseleave', onUp);
     };
     
     document.getElementById('apply-crop-btn').addEventListener('click', () => {
