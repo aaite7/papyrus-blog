@@ -347,6 +347,11 @@ export function injectDecorations() {
     .footer-copy { color: #999; font-size: 0.9rem; }
     body.dark-mode .footer-copy { color: #777; }
     
+    /* 右下角版权标识 */
+    .copyright-badge { position: fixed; bottom: 16px; right: 16px; z-index: 999; font-family: 'Playfair Display', serif; font-size: 0.8rem; color: #999; opacity: 0.7; transition: opacity 0.3s ease; pointer-events: none; user-select: none; }
+    .copyright-badge:hover { opacity: 1; }
+    body.dark-mode .copyright-badge { color: #666; }
+    
     /* 文章操作浮动栏 */
     .floating-bar {
       position: fixed;

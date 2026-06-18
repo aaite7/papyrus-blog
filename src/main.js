@@ -48,6 +48,11 @@ const router = {
     if (live2dWidget) {
         live2dWidget.style.display = (path === '/') ? 'block' : 'none';
     }
+
+    const copyrightBadge = document.getElementById('copyright-badge');
+    if (copyrightBadge) {
+        copyrightBadge.classList.toggle('hidden', path !== '/');
+    }
     
     try {
         const Views = await loadViews();
