@@ -1,4 +1,4 @@
-// src/lib/share.js
+import { showToast } from './ui.js';
 
 /**
  * 渲染分享模态框
@@ -110,34 +110,6 @@ async function copyLink() {
     document.execCommand('copy');
     showToast('链接已复制', 'success');
   }
-}
-
-/**
- * 显示提示
- */
-function showToast(message, type = 'info') {
-  const existing = document.querySelector('.share-toast');
-  if (existing) existing.remove();
-  
-  const toast = document.createElement('div');
-  toast.className = 'share-toast';
-  toast.textContent = message;
-  toast.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: ${type === 'success' ? '#07c160' : '#333'};
-    color: #fff;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    z-index: 10001;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  `;
-  
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 2000);
 }
 
 /**

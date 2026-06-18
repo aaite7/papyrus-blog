@@ -36,6 +36,10 @@ const router = {
     
     APP.innerHTML = UI.renderSkeleton ? UI.renderSkeleton() : 'Loading...';
 
+    if (previousPath === '/' && path !== '/' && UI.destroySnowEffect) {
+      UI.destroySnowEffect();
+    }
+
     const live2dWidget = document.getElementById('live2d-widget');
     if (live2dWidget) {
         live2dWidget.style.display = (path === '/') ? 'block' : 'none';
@@ -59,7 +63,6 @@ const router = {
         else if (path.startsWith('/edit/')) state.isAdmin ? await Views.renderEditor(APP, path.split('/edit/')[1], this) : this.navigate('/login');
         else if (path.startsWith('/post/')) {
             await Views.renderPost(APP, path.split('/post/')[1], this, UI.updatePageMeta);
-            if(UI.highlightCode) UI.highlightCode();
             if(UI.initReadingProgress) UI.initReadingProgress();
         }
         else APP.innerHTML = '<div class="error">404: Page not found</div>';
@@ -169,7 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
   isInitialized = true;
   
   Styles.injectGlobalStyles();
-  if (UI.loadPrism) UI.loadPrism();
   if (UI.initSelectionSharer) UI.initSelectionSharer();
   if (UI.initReadingProgress) UI.initReadingProgress();
   

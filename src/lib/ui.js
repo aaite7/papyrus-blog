@@ -138,6 +138,13 @@ export function initSnowEffect() {
         setTimeout(() => { snowflake.remove(); }, 10000);
     };
     setInterval(createSnowflake, 200);
+    window._snowInterval = setInterval(createSnowflake, 200);
+}
+export function destroySnowEffect() {
+    clearInterval(window._snowInterval);
+    delete window._snowInterval;
+    const hero = document.querySelector('.hero');
+    if (hero) delete hero.dataset.snowing;
 }
 
 // 5. 划词分享
@@ -311,5 +318,3 @@ export function initLive2D() {
 
 // 9. 页面元数据
 export function updatePageMeta(p) { document.title = p.title; }
-export function loadPrism() {} 
-export function highlightCode() {}

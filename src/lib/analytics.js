@@ -1,6 +1,7 @@
 // src/lib/analytics.js
 
 import { supabase } from './supabase.js';
+import { safeJsonParse } from './utils.js';
 
 /**
  * 分析配置
@@ -37,14 +38,10 @@ function generateSessionId() {
 function getOrCreateSession() {
   if (!state.sessionId) {
     // 尝试从 localStorage 获取
-    const stored = localStorage.getItem('analytics_session');
-    if (stored) {
-      const { sessionId, timestamp } = JSON.parse(stored);
-      // 检查会话是否过期
-      if (Date.now() - timestamp < CONFIG.SESSION_TIMEOUT) {
-        state.sessionId = sessionId;
-        return sessionId;
-      }
+    const session = safeJsonParse(localStorage.getItem('analytics_session'), {});
+    if (session && session.sessionId && Date.now() - session.timestamp < CONFIG.SESSION_TIMEOUT) {
+      state.sessionId = session.sessionId;
+      return session.sessionId;
     }
     
     // 创建新会话
@@ -76,7 +73,7 @@ function getUserFingerprint() {
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+    hash = hash | 0;
   }
   
   return `user_${Math.abs(hash).toString(36)}`;
@@ -404,7 +401,7 @@ export async function exportAnalyticsData(startDate, endDate) {
     const csv = [
       headers.join(','),
       ...data.map(row => 
-        headers.map(h => `"${row[h] || ''}"`).join(',')
+        headers.map(h => `"${String(row[h] || '').replace(/"/g, '""')}"`).join(',')
       )
     ].join('\n');
     

@@ -2,6 +2,7 @@
 
 import { commentsService } from './comments.js';
 import { supabase } from './supabase.js';
+import { escapeHtml } from './utils.js';
 
 /**
  * 获取文章评论数
@@ -177,16 +178,6 @@ export async function initLatestCommentsWidget() {
       });
     });
   }
-}
-
-/**
- * 转义 HTML
- */
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 /**

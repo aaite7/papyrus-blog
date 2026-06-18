@@ -1,4 +1,4 @@
-// src/lib/search-history.js
+import { escapeHtml } from './utils.js';
 
 const STORAGE_KEY = 'search_history';
 const MAX_HISTORY = 10;
@@ -80,11 +80,12 @@ export function renderSearchHistory(onSelect) {
 export function initSearchHistory(searchInput) {
   const history = getSearchHistory();
   if (history.length === 0) return;
-  
-  // 显示历史记录（在聚焦时）
-  searchInput.addEventListener('focus', () => {
-    showSearchHistory(searchInput);
-  });
+
+  if (searchInput._focusHistoryBound) return;
+
+  const showHistoryHandler = () => showSearchHistory(searchInput);
+  searchInput.addEventListener('focus', showHistoryHandler);
+  searchInput._focusHistoryBound = true;
   
   // 点击外部关闭
   document.addEventListener('click', (e) => {
@@ -148,11 +149,4 @@ export function hideSearchHistory() {
   if (existing) existing.remove();
 }
 
-/**
- * 转义 HTML
- */
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+

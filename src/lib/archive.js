@@ -1,4 +1,4 @@
-// src/lib/archive.js
+import { escapeHtml } from './utils.js';
 
 import { postsService } from './posts.js';
 
@@ -181,12 +181,4 @@ export function renderArchiveLink() {
   `;
 }
 
-/**
- * 转义 HTML
- */
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+

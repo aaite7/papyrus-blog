@@ -1560,7 +1560,7 @@ export async function renderEditor(APP, id, router) {
         image: document.getElementById('pi').value,
         image_fit: document.getElementById('pfit').value,
         category: document.getElementById('pcat').value,
-        tags: document.getElementById('ptags').value.split(',').filter(Boolean),
+        tags: document.getElementById('ptags').value.split(',').map(t => t.trim()).filter(Boolean),
         crop_data: cropData,
         is_draft: draft,
         icon: iconInput.value
