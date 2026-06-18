@@ -352,6 +352,13 @@ export function injectDecorations() {
     .copyright-badge:hover { opacity: 1; }
     body.dark-mode .copyright-badge { color: #666; }
     
+    /* 划词复制气泡 */
+    .selection-popover { position: absolute; z-index: 10000; opacity: 0; visibility: hidden; transform: translateY(5px); transition: all 0.2s ease; pointer-events: none; }
+    .selection-popover.visible { opacity: 1; visibility: visible; transform: translateY(0); pointer-events: auto; }
+    .popover-btn { background: #1a1a1a; color: #D4AF37; border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; cursor: pointer; font-family: inherit; transition: all 0.2s ease; }
+    .popover-btn:hover { background: #2a2a2a; border-color: #D4AF37; }
+    body.dark-mode .popover-btn { background: #333; }
+    
     /* 文章操作浮动栏 */
     .floating-bar {
       position: fixed;
