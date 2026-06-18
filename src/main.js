@@ -40,6 +40,10 @@ const router = {
       UI.destroySnowEffect();
     }
 
+    if (previousPath?.startsWith('/post/') && !path.startsWith('/post/') && window._readingProgressCleanup) {
+      window._readingProgressCleanup();
+    }
+
     const live2dWidget = document.getElementById('live2d-widget');
     if (live2dWidget) {
         live2dWidget.style.display = (path === '/') ? 'block' : 'none';
@@ -105,16 +109,16 @@ async function updateAuthUI() {
     state.isAdmin = !!session;
 
     if (state.isAdmin) {
-      if (adminLink.querySelector('.admin-text')) {
+      if (adminLink?.querySelector('.admin-text')) {
         adminLink.querySelector('.admin-text').textContent = 'Scriptorium';
-      } else {
+      } else if (adminLink) {
         adminLink.textContent = 'Scriptorium';
       }
-      logoutBtn.classList.remove('hidden');
+      if (logoutBtn) logoutBtn.classList.remove('hidden');
     } else {
-      if (adminLink.querySelector('.admin-text')) {
+      if (adminLink?.querySelector('.admin-text')) {
         adminLink.querySelector('.admin-text').textContent = 'Scribe';
-      } else {
+      } else if (adminLink) {
         adminLink.textContent = 'Scribe';
       }
       logoutBtn.classList.add('hidden');
@@ -167,7 +171,7 @@ function initShortcuts() {
 
 let isInitialized = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (isInitialized) return;
   isInitialized = true;
   
@@ -257,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     router.route(); // Re-route on auth change
   });
 
-  updateAuthUI();
+  await updateAuthUI();
   initShortcuts();
   router.route();
 

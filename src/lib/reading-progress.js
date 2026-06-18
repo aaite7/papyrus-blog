@@ -97,12 +97,18 @@ export function initReadingTracker(postId) {
     ticking = false;
   };
   
-  window.addEventListener('scroll', () => {
+  const onScroll = () => {
     if (!ticking) {
       window.requestAnimationFrame(trackProgress);
       ticking = true;
     }
-  }, { passive: true });
+  };
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window._readingProgressCleanup = () => {
+    window.removeEventListener('scroll', onScroll);
+    delete window._readingProgressCleanup;
+  };
   
   // 显示进度条
   showProgressBar();

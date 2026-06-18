@@ -184,28 +184,27 @@ export function initLanguageSwitcher() {
   const dropdown = document.querySelector('.lang-dropdown');
   
   if (!btn || !dropdown) return;
-  
+
+  const langs = [
+    { code: 'zh-CN', name: '中文', flag: '🇨🇳' },
+    { code: 'en-US', name: 'English', flag: '🇺🇸' }
+  ];
+
   btn.addEventListener('click', () => {
     dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
   });
-  
+
   dropdown.querySelectorAll('.lang-option').forEach(option => {
     option.addEventListener('click', () => {
       setLanguage(option.dataset.lang);
       dropdown.style.display = 'none';
-      btn.textContent = languages.find(l => l.code === currentLang)?.flag || '🌐';
+      btn.textContent = langs.find(l => l.code === currentLang)?.flag || '🌐';
     });
   });
-  
-  // 点击外部关闭
+
   document.addEventListener('click', (e) => {
     if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
       dropdown.style.display = 'none';
     }
   });
 }
-
-const languages = [
-  { code: 'zh-CN', name: '中文', flag: '🇨🇳' },
-  { code: 'en-US', name: 'English', flag: '🇺🇸' }
-];

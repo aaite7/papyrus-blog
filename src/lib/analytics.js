@@ -335,17 +335,11 @@ export function initAnalytics() {
     }
   });
   
-  // 搜索追踪
-  const searchInput = document.getElementById('search');
-  if (searchInput) {
-    searchInput.addEventListener('change', () => {
-      if (searchInput.value.trim().length > 0) {
-        trackEvent('search', {
-          query: searchInput.value.trim()
-        });
-      }
-    });
-  }
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'search' && e.target.value.trim().length > 0) {
+      trackEvent('search', { query: e.target.value.trim() });
+    }
+  });
   
   // 文章阅读完成追踪
   const readObserver = new IntersectionObserver((entries) => {
